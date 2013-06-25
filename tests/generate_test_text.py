@@ -1,5 +1,5 @@
 f = open('latin_text', 'w')
-for i in xrange(50000):
+for i in xrange(20000):
     f.write("Lorem ipsum dolor sit amet, est malis molestiae no,\n")
     f.write("rebum mediocrem vituperatoribus qui et. Quando intellegam ne mea, utroque\n")
     f.write("voluptua sensibus nam te. In duo accusam accusamus, mea ad iriure detracto\n")
