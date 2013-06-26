@@ -219,7 +219,7 @@ class RaptorR10(object):
         m           -- Integer n + s + h(a should have m rows)
         i           -- Integer representing the i'th
                        iteration in reducing matrix V
-        u           -- Integer representing number of columns in matix U
+        u           -- Integer representing number of columns in matrix U
         rows_with_r -- List of row columns sharing the same number of ones
             in matrix V
         """
