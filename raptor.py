@@ -332,6 +332,7 @@ class RaptorR10(object):
 
         D = self.calculate_d()
 
+        self.xors = len(schedule.xors)
         self.i_symbols = [None for i in xrange(self.l)]
         for xor_row, target_row in schedule.xors:
             D[target_row] ^= D[xor_row]

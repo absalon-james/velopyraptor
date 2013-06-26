@@ -158,6 +158,7 @@ class FileEncoder(object):
                 f.close()
 
             block_name += 1
+            print "%s xors needed to decode block %s" % (encoder.xors, block_name)
             self.start_timer()
             block = chunker.chunk()
             self.add_time(self.stop_timer(), 'chunking_time')
