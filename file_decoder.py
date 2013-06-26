@@ -205,10 +205,10 @@ class FileDecoder(object):
             if (padding):
                 self.start_timer()
                 size = os.path.getsize(self.output_file) - padding
-                target = io.open(args.gile, 'a+b')
+                target = io.open(args.file, 'a+b')
                 target.truncate(size)
                 target.close()
-                self.add_timer(self.stop_timer(), 'io_time')
+                self.add_time(self.stop_timer(), 'io_time')
     
             # Increment block number by 1
             block += 1
