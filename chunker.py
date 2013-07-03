@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import io
+import math
+import numpy
+import os
 from bitarray import bitarray
 from block import Source as SourceBlock
 
@@ -32,11 +35,41 @@ class FileChunker(object):
         self.k = k
         self.symbolsize = symbolsize # Bytes
         self.blocksize = self.symbolsize * self.k # Bytes
+        self.filename = filename
+        self.filesize = os.path.getsize(filename)
+        self.total_blocks = int(math.ceil(self.filesize / (self.blocksize * 1.0)))
+
+        if not (self.symbolsize % 8 == 0):
+            raise Exception("Please choose a symbol size that is a multiple of 8 Bytes for 64 bit systems")
+        self.ints_to_read = self.symbolsize / 8 # 64 bit machine
+        self.padding = self.pad_to_even_blocksize()
         
+        #self.ints_to_read = self.symbolsize / 4 # 32 bit machine
+        #if not (self.symbolsize % 4 == 0):
+        #    raise Exception("Please choose a symbol size that is a multiple of 4 Bytes for 32 bit systems")
+
         try:
-            self._f = io.open(filename, 'r+b')
+            #self._f = io.open(filename, 'r+b')
+            self._f = open(filename, 'rb')
         except Exception:
             raise Exception('Unable to open file %s for reading.' % filename)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+    def pad_to_even_blocksize(self):
+
+        padding = self.blocksize - (self.filesize % self.blocksize)
+        if padding:
+            f = io.open(self.filename, 'a+b')
+            for i in xrange(padding):
+                f.write(b'\x00')
+            os.fsync(f)
+            f.close()
+        return padding
 
     def chunk(self):
         """
@@ -55,7 +88,7 @@ class FileChunker(object):
 
         while (j < self.k and not EOF):
             b = self._read()
-            if b:
+            if not (b is None):
                 block.append(b)
                 j += 1
             else:
@@ -65,7 +98,10 @@ class FileChunker(object):
         if len(block) == 0:
             return None
 
-        block.pad()
+        # Indicate padding on the last block
+        if block.id == self.total_blocks - 1:
+            block.padding = self.padding
+
         return block
 
     def _read(self):
@@ -74,12 +110,11 @@ class FileChunker(object):
         Returns None if the length is 0
         Returns a bit array of symbolsize * 8 bits otherwise
         """
-        # Read self.symbolsize bytes
-        ba = bitarray()
-        ba.frombytes(self._f.read(self.symbolsize))
-        if len(ba) == 0:
-            return None
-        return ba
+        difference = self.filesize + self.padding - self._f.tell()
+
+        if difference > 0:
+            return numpy.fromfile(self._f, dtype='uint64', count=self.ints_to_read)
+        return None
 
     def get_block_id(self):
         """
@@ -95,6 +130,13 @@ class FileChunker(object):
         Attempts to close the file associated with this chunker
         """
         try:
+            os.fsync(self._f)
             self._f.close()
+            if self.padding:
+                f = io.open(self.filename, 'a+b')
+                f.truncate(self.filesize)
+                f.close()
         except:
             pass
+
+

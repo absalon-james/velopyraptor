@@ -27,17 +27,24 @@ class TestChunker(unittest.TestCase):
         """
         with self.assertRaises(Exception):
             filename = 'somebadfiledfsgdsgsdfg.txt'
-            chunker = self.get_chunker(filename=filename)
+            with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, filename) as chunker:
+                pass            
 
     def test_good_file(self):
         """
         Asserts that a good file can be opened
-        """        
+        """
         try:
-            chunker = self.get_chunker()
-            chunker.close()
+            with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
+                pass
         except Exception:
             self.fail("Unable to open %s for chunking" % (DEFAULT_FILE))
+
+    def test_unaligned_symbolsize(self):
+
+        with self.assertRaises(Exception):
+            with FileChunker(DEFAULT_K, 7, DEFAULT_FILE) as chunker:
+                pass
 
     def test_blocks_and_padding(self):
         """
@@ -49,29 +56,25 @@ class TestChunker(unittest.TestCase):
         total_blocks = int(math.ceil(filesize / (blocksize * 1.0)))
         padding_size = blocksize - (filesize % blocksize)
 
-        # Grab a chunker
-        chunker = self.get_chunker()
+        with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
 
-        for i in xrange(total_blocks):
-            chunk = chunker.chunk()
+            for i in xrange(total_blocks):
+                chunk = chunker.chunk()
 
-            # We chould have a chunk for all i
-            self.assertIsNotNone(chunk)
+                # We chould have a chunk for all i
+                self.assertIsNotNone(chunk)
 
-            # Assert that the last block has padding
-            if i == total_blocks - 1:
-                self.assertTrue(chunk.padding == padding_size)
+                # Assert that the last block has padding
+                if i == total_blocks - 1:
+                    self.assertTrue(chunk.padding == padding_size)
 
-            # And all others do not
-            else:
-                self.assertTrue(chunk.padding == 0)
+                # And all others do not
+                else:
+                    self.assertTrue(chunk.padding == 0)
 
-        # Continueing to chunk should return none, because
-        # in theory, we have chunked exactly total_blocks
-        self.assertIsNone(chunker.chunk())                
-
-        # Close the chunker
-        chunker.close()
+            # Continueing to chunk should return none, because
+            # in theory, we have chunked exactly total_blocks
+            self.assertIsNone(chunker.chunk())
 
     def test_symbols(self):
         """
@@ -79,14 +82,14 @@ class TestChunker(unittest.TestCase):
         chunk has the same number of symbols anmd that each symbol
         is of length symbolsize
         """
-        chunker = self.get_chunker()
-        chunk = chunker.chunk()
-        symbol_length_in_bits = DEFAULT_SYMBOLSIZE * 8
-        while(chunk):
-            self.assertTrue(len(chunk) == DEFAULT_K)
-
-            # Check each symbol to ensure it is symbolsize * 8 bits long
-            for s in chunk:
-                self.assertTrue(len(s) == symbol_length_in_bits)
+        with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
             chunk = chunker.chunk()
-        chunker.close()
+            symbol_length_in_uint64s = DEFAULT_SYMBOLSIZE / 8 # uint64 for 64 bit systems
+            #symbol_length_in_uint32s = DEFAULT_SYMBOLSIZE / 4 # uint32 for 32 bit systems
+            while(chunk):
+                self.assertTrue(len(chunk) == DEFAULT_K)
+
+                # Check each symbol to ensure it is symbolsize / 8 uint64s long
+                for s in chunk:
+                    self.assertTrue(len(s) == symbol_length_in_uint64s)
+                chunk = chunker.chunk()

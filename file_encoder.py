@@ -148,13 +148,15 @@ class FileEncoder(object):
             for i in xrange(self.k + self.m):
 
                 # Each share will be named its id (share 0 is named 0)
-                f = io.open(os.path.join(dir_name, str(i)), 'w+b')
+                #f = io.open(os.path.join(dir_name, str(i)), 'w+b')
+                f = open(os.path.join(dir_name, str(i)), 'wb')
 
                 # The encoder produces an (id, bitarray) tuple
                 self.start_timer()
                 sid, symbol = encoder.next()
                 self.add_time(self.stop_timer(), 'encoding_time')
-                f.write(symbol.tobytes())
+                #f.write(symbol.tobytes())
+                symbol.tofile(f)
                 f.close()
 
             block_name += 1
