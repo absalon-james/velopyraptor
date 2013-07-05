@@ -55,42 +55,43 @@ class TestEncodingDecoding(unittest.TestCase):
         print "\nTesting encoding and then decoding with k = %s" % k
 
         md5 = hashlib.md5()
-        chunker = FileChunker(k, SYMBOLSIZE, DEFAULT_FILE)
+
+        with FileChunker(k, SYMBOLSIZE, DEFAULT_FILE) as chunker:
         
-        chunk = chunker.chunk()
-        while chunk:
-            padding = chunk.padding
-
-            symbols = [(i, chunk[i]) for i in xrange(k)]
-            encoder = Encoder(k, symbols)
-            symbols = []
-
-            # Start at k/2 and produce 1.25k more symbols to get a mix
-            # of parity and source symbols
-            for i in xrange(k * 2):
-                symbols.append(encoder.next())
-
-            encoder = None
-            decoder = Decoder(k)
-            for tup in symbols:
-                decoder.append(tup)
-
-            decoder.decode()
-            decoded = bytearray()
-            for i in xrange(k):
-                esi, s = decoder.next()
-                decoded += s.tobytes()
-            decoder = None
-
-            if padding:
-                padding = 0 - padding
-                print "Removing padding", padding, "bytes"
-                decoded = decoded[:padding]
-
-            md5.update(decoded)
-            
-            # Continue on to the next chunk
             chunk = chunker.chunk()
+            while chunk:
+                padding = chunk.padding
+
+                symbols = [(i, chunk[i]) for i in xrange(k)]
+                encoder = Encoder(k, symbols)
+                symbols = []
+
+                # Start at k/2 and produce 1.25k more symbols to get a mix
+                # of parity and source symbols
+                for i in xrange(k * 2):
+                    symbols.append(encoder.next())
+
+                encoder = None
+                decoder = Decoder(k)
+                for tup in symbols:
+                    decoder.append(tup)
+
+                decoder.decode()
+                decoded = bytearray()
+                for i in xrange(k):
+                    esi, s = decoder.next()
+                    decoded += s.tobytes()
+                decoder = None
+
+                if padding:
+                    padding = 0 - padding
+                    print "Removing padding", padding, "bytes"
+                    decoded = decoded[:padding]
+
+                md5.update(decoded)
+            
+                # Continue on to the next chunk
+                chunk = chunker.chunk()
 
         print "Original digest:", self.original_digest
         print "Decoded digest:", md5.hexdigest()
