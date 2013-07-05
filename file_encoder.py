@@ -112,60 +112,61 @@ class FileEncoder(object):
         self.stats['start_time'] = time.time()
 
         self.start_timer()
-        chunker = FileChunker(args.k, args.s, args.file)
-        self.add_time(self.stop_timer(), 'chunking_time')
-        block_name = 0
 
-        # Chunker returns none when we are out of blocks
-        self.start_timer()
-        block = chunker.chunk()
-        self.add_time(self.stop_timer(), 'chunking_time')
-        while(block):
+        with FileChunker(args.k, args.s, args.file) as chunker:
+            self.add_time(self.stop_timer(), 'chunking_time')
+            block_name = 0
 
-            # Create the block directory
-            dir_name = os.path.join(self.output_dir, str(block_name))
-            os.makedirs(dir_name)
-
-            # The k source symbols are the first k encoding symbols
-            # The id is used to calculate a triple
-            source_symbols = [(id, block[id]) for id in xrange(self.k)]
-
-            self.start_timer()
-            encoder = Encoder(self.k, source_symbols)
-            self.add_time(self.stop_timer(), 'encoding_time')
-
-            # Write padding and k parameters that will be used
-            # to decode the block
-            # @TODO - Pack integers into bytes and write to binary file
-            #   Instead of text
-            f = open(os.path.join(dir_name, 'meta'), 'w')
-            f.write("%s:%s" % (block.k, block.padding))
-            f.close()
-
-            # Iterate over the encoder and produce the first k + m symbols
-            # In this instance the first k symbols will match the source symbols
-            # m is the number of parity blocks
-            # NOTE - We could start at k and produce k+m symbols there consisting
-            # entirely of parity blocks and be just as fine
-            for i in xrange(self.k + self.m):
-
-                # Each share will be named its id (share 0 is named 0)
-                #f = io.open(os.path.join(dir_name, str(i)), 'w+b')
-                #f = open(os.path.join(dir_name, str(i)), 'wb')
-
-                # The encoder produces an (id, bitarray) tuple
-                self.start_timer()
-                sid, symbol = encoder.next()
-                self.add_time(self.stop_timer(), 'encoding_time')
-                #f.write(symbol.tobytes())
-                symbol.tofile(os.path.join(dir_name, str(i)))
-                f.close()
-
-            block_name += 1
-            print "%s xors needed to decode block %s" % (encoder.xors, block_name)
+            # Chunker returns none when we are out of blocks
             self.start_timer()
             block = chunker.chunk()
             self.add_time(self.stop_timer(), 'chunking_time')
+            while(block):
+
+                # Create the block directory
+                dir_name = os.path.join(self.output_dir, str(block_name))
+                os.makedirs(dir_name)
+
+                # The k source symbols are the first k encoding symbols
+                # The id is used to calculate a triple
+                source_symbols = [(id, block[id]) for id in xrange(self.k)]
+
+                self.start_timer()
+                encoder = Encoder(self.k, source_symbols)
+                self.add_time(self.stop_timer(), 'encoding_time')
+
+                # Write padding and k parameters that will be used
+                # to decode the block
+                # @TODO - Pack integers into bytes and write to binary file
+                #   Instead of text
+                f = open(os.path.join(dir_name, 'meta'), 'w')
+                f.write("%s:%s" % (block.k, block.padding))
+                f.close()
+
+                # Iterate over the encoder and produce the first k + m symbols
+                # In this instance the first k symbols will match the source symbols
+                # m is the number of parity blocks
+                # NOTE - We could start at k and produce k+m symbols there consisting
+                # entirely of parity blocks and be just as fine
+                for i in xrange(self.k + self.m):
+
+                    # Each share will be named its id (share 0 is named 0)
+                    #f = io.open(os.path.join(dir_name, str(i)), 'w+b')
+                    #f = open(os.path.join(dir_name, str(i)), 'wb')
+
+                    # The encoder produces an (id, bitarray) tuple
+                    self.start_timer()
+                    sid, symbol = encoder.next()
+                    self.add_time(self.stop_timer(), 'encoding_time')
+                    #f.write(symbol.tobytes())
+                    symbol.tofile(os.path.join(dir_name, str(i)))
+                    f.close()
+
+                block_name += 1
+                print "%s xors needed to decode block %s" % (encoder.xors, block_name)
+                self.start_timer()
+                block = chunker.chunk()
+                self.add_time(self.stop_timer(), 'chunking_time')
 
         self.stats['blocksize'] = self.k * self.s
         self.stats['symbolsize'] = self.s
