@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import os
 import io
+import numpy
+import os
 import time
 from decoder import Decoder
-from bitarray import bitarray
 
 class FileDecoder(object):
 
@@ -160,15 +160,13 @@ class FileDecoder(object):
 
                     # Open the share file in binary mode
                     self.start_timer()
-                    f = io.open(os.path.join(blockdir, _file), 'r+b')
-                    ba = bitarray()
-                    ba.frombytes(f.read())
-                    f.close()
+
+                    symbol = numpy.fromfile(os.path.join(blockdir, _file), dtype='uint64')
                     self.add_time(self.stop_timer(), 'decoding_time')
 
                     # Add the symbol to the decoder.
-                    # A symbol is a (integer, bitarray) tuple
-                    decoder.append((int(_file), ba))
+                    # A symbol is a (integer, numpy array) tuple
+                    decoder.append((int(_file), symbol))
                     read_symbols += 1
                 except Exception, e:
                     continue
@@ -188,15 +186,15 @@ class FileDecoder(object):
             # Steam source symbol output by encoding the first
             # k encoded symbols.
             # The first k source symbols == the first k encoding symbols
-            target = io.open(self.output_file, 'a+b')
+            target = open(self.output_file, 'ab')
             for i in xrange(k):
 
                 self.start_timer()
-                s = decoder.next()[1].tobytes()
+                s = decoder.next()[1]
                 self.add_time(self.stop_timer(), 'decoding_time')
 
                 self.start_timer()
-                target.write(s)
+                s.tofile(target)
                 self.add_time(self.stop_timer(), 'io_time')
             target.close()
         
