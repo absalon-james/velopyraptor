@@ -111,7 +111,9 @@ class FileEncoder(object):
 
         self.stats['start_time'] = time.time()
 
+        self.start_timer()
         chunker = FileChunker(args.k, args.s, args.file)
+        self.add_time(self.stop_timer(), 'chunking_time')
         block_name = 0
 
         # Chunker returns none when we are out of blocks
@@ -149,14 +151,14 @@ class FileEncoder(object):
 
                 # Each share will be named its id (share 0 is named 0)
                 #f = io.open(os.path.join(dir_name, str(i)), 'w+b')
-                f = open(os.path.join(dir_name, str(i)), 'wb')
+                #f = open(os.path.join(dir_name, str(i)), 'wb')
 
                 # The encoder produces an (id, bitarray) tuple
                 self.start_timer()
                 sid, symbol = encoder.next()
                 self.add_time(self.stop_timer(), 'encoding_time')
                 #f.write(symbol.tobytes())
-                symbol.tofile(f)
+                symbol.tofile(os.path.join(dir_name, str(i)))
                 f.close()
 
             block_name += 1

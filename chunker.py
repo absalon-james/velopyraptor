@@ -64,9 +64,9 @@ class FileChunker(object):
 
         padding = self.blocksize - (self.filesize % self.blocksize)
         if padding:
+            bytes = bytearray('\x00') * padding
             f = io.open(self.filename, 'a+b')
-            for i in xrange(padding):
-                f.write(b'\x00')
+            f.write(bytes)
             os.fsync(f)
             f.close()
         return padding

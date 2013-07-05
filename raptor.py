@@ -208,7 +208,7 @@ class RaptorR10(object):
             b = (b + a) % self.l_prime
             while b >= self.l:
                 b = (b + a) % self.l_prime
-            result ^= numpy.bitwise_xor(result, self.i_symbols[b])
+            result = numpy.bitwise_xor(result, self.i_symbols[b])
         return result
 
     def choose_min_degree_row(self, a, m, i, u, rows_with_r):
