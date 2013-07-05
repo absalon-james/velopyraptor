@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from bitarray import bitarray
+import numpy
 
 class Source(list):
 
@@ -35,3 +35,26 @@ class Source(list):
         self.symbolsize = symbolsize
         self.id = block_id
         self.padding = 0 # Bytes
+
+    def pad(self):
+
+        # loop through checking each symbol
+        for i in xrange(len(self)):
+
+            # Look for strings that are not numpy arrays
+            if not isinstance(self[i], numpy.ndarray):
+
+                # Figure out padding if any
+                difference = self.symbolsize - len(self[i])
+                self.padding += difference
+                self[i] += b'\x00' * difference
+
+                # Convert to numpy array
+                self[i] = numpy.fromstring(self[i], dtype="uint64")
+
+        # Add as many zero symbols as necessary to have a full block
+        for i in xrange(len(self), self.k):
+            src = b'\x00' * self.symbolsize
+            self.padding += self.symbolsize
+            array = numpy.fromstring(src, dtype="uint64")
+            self.append(array)

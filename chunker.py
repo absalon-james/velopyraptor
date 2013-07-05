@@ -42,7 +42,6 @@ class FileChunker(object):
         if not (self.symbolsize % 8 == 0):
             raise Exception("Please choose a symbol size that is a multiple of 8 Bytes for 64 bit systems")
         self.ints_to_read = self.symbolsize / 8 # 64 bit machine
-        self.padding = self.pad_to_even_blocksize()
         
         #self.ints_to_read = self.symbolsize / 4 # 32 bit machine
         #if not (self.symbolsize % 4 == 0):
@@ -59,17 +58,6 @@ class FileChunker(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
-
-    def pad_to_even_blocksize(self):
-
-        padding = self.blocksize - (self.filesize % self.blocksize)
-        if padding:
-            bytes = bytearray('\x00') * padding
-            f = io.open(self.filename, 'a+b')
-            f.write(bytes)
-            os.fsync(f)
-            f.close()
-        return padding
 
     def chunk(self):
         """
@@ -98,10 +86,7 @@ class FileChunker(object):
         if len(block) == 0:
             return None
 
-        # Indicate padding on the last block
-        if block.id == self.total_blocks - 1:
-            block.padding = self.padding
-
+        block.pad()
         return block
 
     def _read(self):
@@ -110,10 +95,14 @@ class FileChunker(object):
         Returns None if the length is 0
         Returns a bit array of symbolsize * 8 bits otherwise
         """
-        difference = self.filesize + self.padding - self._f.tell()
+        difference = self.filesize - self._f.tell()
 
-        if difference > 0:
+        if difference > self.symbolsize:
             return numpy.fromfile(self._f, dtype='uint64', count=self.ints_to_read)
+
+        elif difference > 0:
+            return self._f.read()
+
         return None
 
     def get_block_id(self):
@@ -130,12 +119,7 @@ class FileChunker(object):
         Attempts to close the file associated with this chunker
         """
         try:
-            os.fsync(self._f)
             self._f.close()
-            if self.padding:
-                f = io.open(self.filename, 'a+b')
-                f.truncate(self.filesize)
-                f.close()
         except:
             pass
 
