@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import numpy
+import config
 
 class Source(list):
 
     """
-    Represents a list of bitarrays that are the source symbols
+    Represents a list of unsigned integer arrays that are the source symbols
     for an encoding
     """
 
@@ -36,7 +37,15 @@ class Source(list):
         self.id = block_id
         self.padding = 0 # Bytes
 
+        if config._64BIT:
+            self.dtype = 'uint64'
+        else:
+            self.dtype = 'uint32'
+
     def pad(self):
+        """
+        Pads the block to have k symbols of each symbolsize bytes.
+        Each symbol will be interepreted as an array of unsigned integers        """
 
         # loop through checking each symbol
         for i in xrange(len(self)):
@@ -50,11 +59,11 @@ class Source(list):
                 self[i] += b'\x00' * difference
 
                 # Convert to numpy array
-                self[i] = numpy.fromstring(self[i], dtype="uint64")
+                self[i] = numpy.fromstring(self[i], dtype=self.dtype)
 
         # Add as many zero symbols as necessary to have a full block
         for i in xrange(len(self), self.k):
             src = b'\x00' * self.symbolsize
             self.padding += self.symbolsize
-            array = numpy.fromstring(src, dtype="uint64")
+            array = numpy.fromstring(src, dtype=self.dtype)
             self.append(array)

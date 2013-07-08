@@ -195,7 +195,7 @@ class RaptorR10(object):
         Arguments:
         id -- Integer that indicates the id'th symbol is to be encoded
 
-        Returns a bit array
+        Returns a numpy array
         """
         
         d, a, b = self.triple(id)
@@ -322,7 +322,7 @@ class RaptorR10(object):
         Applies the raptor decoding process to prevent multiplying the inverse
         of a by the source symbols
 
-        Returns list of bit arrays representing intermediate symbols
+        Returns list of numpy arrays representing intermediate symbols
         """
 
         if len(self.symbols) < self.k:
