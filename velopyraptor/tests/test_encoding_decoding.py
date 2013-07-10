@@ -43,9 +43,14 @@ class TestEncodingDecoding(unittest.TestCase):
         for i in xrange(k_min, k_max + 1):
             try:
                 if not self.encode_decode(i):
+                    print "K: %s failed" % i
                     ks_that_fail.append(i)
-            except:
+                else:
+                    print "K %s passed" % i
+            except Exception, e:
                 ks_that_fail.append(i)
+                print "K: %s failed" % i
+                print e
 
         if len(ks_that_fail) > 0:
             self.fail("K Failed for the following values: %s" % ks_that_fail)
@@ -80,7 +85,7 @@ class TestEncodingDecoding(unittest.TestCase):
                 decoded = bytearray()
                 for i in xrange(k):
                     esi, s = decoder.next()
-                    decoded += s.tobytes()
+                    decoded += s.tostring()
                 decoder = None
 
                 if padding:
