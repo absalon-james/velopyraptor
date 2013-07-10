@@ -211,7 +211,7 @@ class RaptorR10(object):
             numpy.bitwise_xor(result, self.i_symbols[b], result)
         return result
 
-    def choose_min_degree_row(self, a, m, i, u, rows_with_r):
+    def choose_min_degree_row(self, a, original_degrees, m, i, u, rows_with_r):
         """
         Chooses a minimum degree row out of rows with r
 
@@ -224,25 +224,14 @@ class RaptorR10(object):
         rows_with_r -- List of row columns sharing the same number of ones
             in matrix V
         """
-        # Calculate number of ones in columns amonst rows_with_r
-        degrees = {}
-        for column in xrange(i, self.l - u):
-            degrees[column] = []
-            for row in rows_with_r:
-                if a[row][column]:
-                    degrees[column].append(row)
 
-        # Find minimum column
         min_degree = m + 1
-        min_column = None
-        for column in xrange(i, self.l - u):
-            if not (len(degrees[column]) == 0):
-                if len(degrees[column]) < min_degree:
-                    min_degree = len(degrees[column])
-                    min_column = degrees[column]
-
-        # Return first row of min column
-        return min_column[0]
+        min_row = None
+        for r in rows_with_r:
+            if original_degrees[r] < min_degree:
+                min_degree = original_degrees[r]
+                min_row = r
+        return min_row
 
     def choose_row_from_graph(self, a, m, i, u, rows_with_r):
         """
@@ -352,6 +341,7 @@ class RaptorR10(object):
         """
         m = self.s + self.h + len(self.symbols)
         schedule = Schedule(self.l, (self.s + self.h + len(self.symbols)))
+        original_degrees = [row.count() for row in a]
 
         # V is defined as the last (m - i rows and columns i through l - u)
         i = 0
@@ -365,13 +355,13 @@ class RaptorR10(object):
             if r == 2:
                 row = self.choose_row_from_graph(a, m, i, u, rows_with_r)
             else:
-                row = self.choose_min_degree_row(a, m, i, u, rows_with_r)
+                row = self.choose_min_degree_row(a, original_degrees, m, i, u, rows_with_r)
 
             if r == 0:
                 raise Exception("Unable to decode.  No nonzero row to choose from v")
 
             # Exchange row with first row of v
-            self.exchange_row(a, i, row, schedule)
+            self.exchange_row(a, original_degrees, i, row, schedule)
 
             # Reorder columns -- place a 1 in first column of v,
             # place remaining ones in right side of v by reordering columns
@@ -411,7 +401,7 @@ class RaptorR10(object):
                 for row in xrange(column + 1, m):
                     if a[row][column]:
                         # swap rows row and column
-                        self.exchange_row(a, column, row, schedule)
+                        self.exchange_row(a, original_degrees, column, row, schedule)
                         break
 
                 if not a[column][column]:
@@ -521,7 +511,7 @@ class RaptorR10(object):
         schedule.exchange_column(c1, c2)
 
     @classmethod
-    def exchange_row(cls, a, r1, r2, schedule):
+    def exchange_row(cls, a, original_degrees, r1, r2, schedule):
         """
         Exchanges row r1 of a with row r2 of a and records the operation
         in the schedule
@@ -536,6 +526,10 @@ class RaptorR10(object):
         temp = a[r1]
         a[r1] = a[r2]
         a[r2] = temp
+
+        temp = original_degrees[r1]
+        original_degrees[r1] = original_degrees[r2]
+        original_degrees[r2] = temp
 
         # Record the operation
         schedule.exchange_row(r1, r2)
