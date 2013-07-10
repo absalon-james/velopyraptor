@@ -334,6 +334,7 @@ class RaptorR10(object):
         D = self.calculate_d()
 
         self.xors = len(schedule.xors)
+        print "%s xors needed to calculate intermediate symbols" % self.xors
         self.i_symbols = [None for i in xrange(self.l)]
         for xor_row, target_row in schedule.xors:
             numpy.bitwise_xor(D[target_row], D[xor_row], D[target_row])
