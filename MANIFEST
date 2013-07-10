@@ -12,3 +12,10 @@ velopyraptor/file_encoder.py
 velopyraptor/matrix.py
 velopyraptor/raptor.py
 velopyraptor/schedule.py
+velopyraptor/distributions/__init__.py
+velopyraptor/distributions/degree.py
+velopyraptor/distributions/gray.py
+velopyraptor/distributions/half.py
+velopyraptor/distributions/primes.py
+velopyraptor/distributions/random.py
+velopyraptor/distributions/systematic_index.py
