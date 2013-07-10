@@ -113,7 +113,7 @@ class FileEncoder(object):
 
         self.start_timer()
 
-        with FileChunker(args.k, args.s, args.file) as chunker:
+        with FileChunker(self.k, self.s, self.input_file) as chunker:
             self.add_time(self.stop_timer(), 'chunking_time')
             block_name = 0
 
