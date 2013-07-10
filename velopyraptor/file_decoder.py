@@ -203,7 +203,7 @@ class FileDecoder(object):
             if (padding):
                 self.start_timer()
                 size = os.path.getsize(self.output_file) - padding
-                target = io.open(args.file, 'a+b')
+                target = io.open(self.output_file, 'a+b')
                 target.truncate(size)
                 target.close()
                 self.add_time(self.stop_timer(), 'io_time')
