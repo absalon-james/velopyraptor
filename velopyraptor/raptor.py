@@ -343,6 +343,9 @@ class RaptorR10(object):
         schedule = Schedule(self.l, (self.s + self.h + len(self.symbols)))
         original_degrees = [row.count() for row in a]
 
+        # Take a quick stab at trying to reduce the number of xors
+        self.prepass(a, schedule)
+
         # V is defined as the last (m - i rows and columns i through l - u)
         i = 0
         u = 0
@@ -629,3 +632,17 @@ class RaptorR10(object):
             matrix.append(ba)
         return matrix
 
+    def prepass(self, a, schedule):
+
+        """
+        Taking a stab at doing some preliminary xoring before
+        calculating the schedule as normal in an effort to reduce
+        the number of XORs
+        """
+
+        for i in xrange(len(a)):
+            for j in xrange(i + 1, len(a)):
+                count = a[j].count()
+                new_row = a[i] ^ a[j]
+                if new_row.count() + 2 < count:
+                    self.xor_row(a, j, i, schedule) 
