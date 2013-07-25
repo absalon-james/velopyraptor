@@ -342,6 +342,9 @@ class RaptorR10(object):
         schedule = Schedule(self.l, (self.s + self.h + len(self.symbols)))
         original_degrees = [row.count() for row in a]
 
+        # Take a quick stab at trying to reduce the number of xors
+        self.prepass(a, schedule)
+
         # V is defined as the last (m - i rows and columns i through l - u)
         i = 0
         u = 0
@@ -469,6 +472,35 @@ class RaptorR10(object):
         a.extend(self.lt(self.l, self.l_prime, triples))
         return a
 
+    @classmethod
+    def prepass(cls, a, schedule):
+
+        """
+        Taking a stab at doing some preliminary xoring before
+        calculating the schedule as normal in an effort to reduce
+        the number of XORs.
+
+        Makes a single pass comparing rows to other rows and determining
+        if the xoring of two rows results in less ones.
+
+        Arguments:
+        a - List of bitarrays representing matrix a
+        schedule - Schedule of operations recorded on a to mimic on
+            encoded symbols
+        """
+
+        # Iterate over rows in a
+        for i in xrange(len(a)):
+
+            # Iterate over remaining rows in a
+            for j in xrange(i + 1, len(a)):
+                count = a[j].count()
+                new_row = a[i] ^ a[j]
+
+                # Check requirements prior to proceeding with XOR
+                if new_row.count() + 2 < count:
+                    cls.xor_row(a, j, i, schedule)
+ 
     @classmethod
     def xor_row(cls, a, r1, r2, schedule):
 
