@@ -6,7 +6,8 @@ import unittest
 # Parent holds the encoding/decoding python files
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from chunker import FileChunker
+import config
+from chunker import Chunker, FileChunker, SymbolSizeException
 
 DEFAULT_FILE = 'latin_text'
 DEFAULT_K = 4
@@ -14,11 +15,35 @@ DEFAULT_SYMBOLSIZE = 1024 * 1024
 
 class TestChunker(unittest.TestCase):
 
-    def get_chunker(self, k=DEFAULT_K, symbolsize=DEFAULT_SYMBOLSIZE, filename=DEFAULT_FILE):
+    def test_symbolsize(self):
         """
-        Returns a chunker.
+        Asserts that SymbolSizeExceptions are raised for improper symbol sizes
+        on both 32 bit and 64 bit systems
         """
-        return FileChunker(k, symbolsize, filename)
+        # Save original value
+        original = config._64BIT
+
+        try:
+            # Try a bad symbol size assuming 64 bit
+            with self.assertRaises(SymbolSizeException):
+                config._64BIT = True
+                c = Chunker(10, 7)
+
+            # Try a bad symbolsize assuming 32 bit
+            with self.assertRaises(SymbolSizeException):
+                config._64BIT = False
+                c = Chunker(10, 5)
+
+            # Try a good symbol size
+            try:
+                config._64BIT = True
+                c = Chunker(10, 8)
+            except Exception, e:
+                self.fail(e.tostring())
+                
+        # Always reset config value to normal
+        finally:
+            config._64BIT = original
 
     def test_non_file(self):
         """
@@ -39,12 +64,6 @@ class TestChunker(unittest.TestCase):
                 pass
         except Exception:
             self.fail("Unable to open %s for chunking" % (DEFAULT_FILE))
-
-    def test_unaligned_symbolsize(self):
-
-        with self.assertRaises(Exception):
-            with FileChunker(DEFAULT_K, 7, DEFAULT_FILE) as chunker:
-                pass
 
     def test_blocks_and_padding(self):
         """

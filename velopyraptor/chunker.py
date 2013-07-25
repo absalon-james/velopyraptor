@@ -18,7 +18,61 @@ import os
 import config
 from block import Source as SourceBlock
 
-class FileChunker(object):
+class SymbolSizeException(Exception):
+
+    def __init__(self, bits, _bytes):
+    
+        """
+        Exception for when symbolsizes are not suitable for architecture
+
+        Arguments:
+        bits -- Integer number of bits in a register (Usually 32, 64)
+        _bytes -- Number of bytes per register (64bit is 8 bytes and so forth)
+        """
+        message = "Symbol size must be a multiple of %s bytes for %s bit systems." % (_bytes, bits)
+        super(SymbolSizeException, self).__init__(message)
+
+class Chunker(object):
+    
+    def __init__(self, k, symbolsize):
+        """
+        Constructor for initializing the base Chunker
+
+        Arguments:
+        k -- Integer number of symbols per block
+        symbolsize -- Integer number of BYTES per symbol.
+        """
+        self.block_id = 0
+        self.k = k
+        self.symbolsize = symbolsize
+        self.blocksize = self.symbolsize * self.k
+        
+        # Check for 64 bit
+        if config._64BIT:
+            if not (self.symbolsize % 8 == 0):
+                raise SymbolSizeException(64, 64 / 8)
+            bytes_per_int = 8
+            self.dtype = "uint64"
+
+        # Check for 32 bit
+        else:
+            if not (self.symbolsize % 4 == 0):
+                raise SymbolSizeException(32, 32 / 8)
+            bytes_per_int = 4
+            self.dtype = "uint32"
+
+        self.ints_to_read = self.symbolsize / bytes_per_int
+
+    def get_block_id(self):
+        """
+        Gets the current block id and increments to prepare for the next block.
+        Returns the current block id
+        """
+        r = self.block_id
+        self.block_id += 1
+        return r
+
+class FileChunker(Chunker):
 
     def __init__(self, k, symbolsize, filename):
         """
@@ -29,26 +83,9 @@ class FileChunker(object):
         symbol_size -- Integer Size of each symbol (IN BYTES)
         filename    -- String name of file to chunk
         """
-        self.block_id = 0
-        self.k = k
-        self.symbolsize = symbolsize # Bytes
-        self.blocksize = self.symbolsize * self.k # Bytes
+        super(FileChunker, self).__init__(k, symbolsize)
         self.filename = filename
         self.filesize = os.path.getsize(filename)
-
-        # Check for 64 bit
-        if config._64BIT:
-            if not (self.symbolsize % 8 == 0):
-                raise Exception("Please choose a symbol size that is a multiple of 8 Bytes for 64 bit systems")
-            self.ints_to_read = self.symbolsize / 8 
-            self.dtype = "uint64"
-
-        # Check for 32 bit
-        else:
-            if not (self.symbolsize % 4 == 0):
-                raise Exception("Please choose a symbol size that is a multiple of 4 Bytes for 32 bit systems")
-            self.ints_to_read = self.symbolsize / 4
-            self.dtype = "uint32"
 
         try:
             self._f = open(filename, 'rb')
@@ -116,15 +153,6 @@ class FileChunker(object):
             return self._f.read()
 
         return None
-
-    def get_block_id(self):
-        """
-        Gets the current block id and increments to prepare for the next block.
-        Returns the current block id
-        """
-        r = self.block_id
-        self.block_id += 1
-        return r
 
     def close(self):
         """
