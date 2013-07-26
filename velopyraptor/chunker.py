@@ -51,17 +51,17 @@ class Chunker(object):
         if config._64BIT:
             if not (self.symbolsize % 8 == 0):
                 raise SymbolSizeException(64, 64 / 8)
-            bytes_per_int = 8
+            self.bytes_per_int = 8
             self.dtype = "uint64"
 
         # Check for 32 bit
         else:
             if not (self.symbolsize % 4 == 0):
                 raise SymbolSizeException(32, 32 / 8)
-            bytes_per_int = 4
+            self.bytes_per_int = 4
             self.dtype = "uint32"
 
-        self.ints_to_read = self.symbolsize / bytes_per_int
+        self.ints_to_read = self.symbolsize / self.bytes_per_int
 
     def get_block_id(self):
         """
@@ -71,6 +71,18 @@ class Chunker(object):
         r = self.block_id
         self.block_id += 1
         return r
+
+    def __enter__(self):
+        """
+        For use within a with block
+        """
+        return self
+    
+    def __exit__(self, type, value, traceback):
+        """
+        Does nothing when exiting the with context
+        """
+        pass
 
 class FileChunker(Chunker):
 
@@ -91,12 +103,6 @@ class FileChunker(Chunker):
             self._f = open(filename, 'rb')
         except Exception:
             raise Exception('Unable to open file %s for reading.' % filename)
-
-    def __enter__(self):
-        """
-        For use within a with block
-        """
-        return self
 
     def __exit__(self, type, value, traceback):
         """
@@ -162,3 +168,75 @@ class FileChunker(Chunker):
             self._f.close()
         except:
             pass
+
+class StringChunker(Chunker):
+    """
+    Chunks large strings into smaller parts similar
+    to the file chunker
+    """
+
+    def __init__(self, k, symbolsize, value):
+        """
+        Initialized the string chunker
+
+        Arguments:
+        k -- Integer number of symbols per chunk
+        symbolsize -- Size of each symbol in a chunk]
+        value -- String to chunk
+        """
+        super(StringChunker, self).__init__(k, symbolsize)
+        self.value = value
+        self.bytesread = 0
+        self.stringsize = len(value)
+
+    def chunk(self):
+        """
+        Should return a block of uint numpy arrays
+        Attempts to read k symbols from the file and pads a block
+        so that the block is k symbols of symbolsize bytes
+        """
+        if self.bytesread >= self.stringsize:
+            return None
+
+        block = SourceBlock(self.k, self.symbolsize, self.get_block_id())
+
+        j = 0
+        while j < self.k and self.bytesread < self.stringsize:
+            b = self._read()
+            if not (b is None):
+                block.append(b)
+                j += 1
+            else:
+                break
+
+        if len(block) == 0:
+            return None
+
+        block.pad()
+        return block
+    
+    def _read(self):
+        """
+        Reads symbolsize bytes from the file
+        Returns None if the length is 0
+        Returns a numpy array of uints unless there are less than
+        ints to read of data left in which case a string is returned.
+        """
+
+        # Calculate remainin unread bytes
+        difference = self.stringsize - self.bytesread
+
+        # Read a complete symbol of uints
+        if difference > self.symbolsize:
+            _slice = self.value[self.bytesread:self.bytesread + self.symbolsize]
+            array = numpy.fromstring(_slice, dtype=self.dtype, count=self.ints_to_read)
+            self.bytesread += len(_slice)
+            return array
+
+        # Read the remainder
+        elif difference > 0:
+            _slice = self.value[self.bytesread:]
+            self.bytesread += len(_slice)
+            return _slice
+
+        return None

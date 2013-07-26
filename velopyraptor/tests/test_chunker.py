@@ -7,108 +7,135 @@ import unittest
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
-from chunker import Chunker, FileChunker, SymbolSizeException
+from chunker import Chunker, SymbolSizeException
 
-DEFAULT_FILE = 'latin_text'
-DEFAULT_K = 4
-DEFAULT_SYMBOLSIZE = 1024 * 1024
+DEFAULT_SYMBOLSIZE = 64
+DEFAULT_K = 10
 
 class TestChunker(unittest.TestCase):
 
-    def test_symbolsize(self):
+    def test_chunker_init(self):
         """
-        Asserts that SymbolSizeExceptions are raised for improper symbol sizes
-        on both 32 bit and 64 bit systems
+        Tests the basic initialization of the chunker class
         """
-        # Save original value
+        expected_blocksize = DEFAULT_SYMBOLSIZE * DEFAULT_K
+        expected_block_id = 0
+        c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE)
+
+        # Check k
+        self.assertEqual(c.k, DEFAULT_K)
+
+        # Check Symbolsize
+        self.assertEqual(c.symbolsize, DEFAULT_SYMBOLSIZE)
+
+        # Check blocksize
+        self.assertEqual(c.blocksize, expected_blocksize)
+
+        # Check expected block id
+        self.assertEqual(c.block_id, expected_block_id)
+
+    def test_64bit_init(self):
+        """
+        Tests the initialization of the chunker on 64 bit systems
+        """
         original = config._64BIT
-
+        config._64BIT = True
         try:
-            # Try a bad symbol size assuming 64 bit
-            with self.assertRaises(SymbolSizeException):
-                config._64BIT = True
-                c = Chunker(10, 7)
-
-            # Try a bad symbolsize assuming 32 bit
-            with self.assertRaises(SymbolSizeException):
-                config._64BIT = False
-                c = Chunker(10, 5)
-
-            # Try a good symbol size
-            try:
-                config._64BIT = True
-                c = Chunker(10, 8)
-            except Exception, e:
-                self.fail(e.tostring())
-                
-        # Always reset config value to normal
+            c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE)
+            self.assertEqual(c.dtype, "uint64")
+            self.assertEqual(c.bytes_per_int, 8)
         finally:
             config._64BIT = original
 
-    def test_non_file(self):
+    def test_32bit_init(self):
         """
-        Asserts that an exception is raised when attempting
-        to chunk a non file
+        Tests the initialization of the chunker on 32 bit systems
         """
-        with self.assertRaises(Exception):
-            filename = 'somebadfiledfsgdsgsdfg.txt'
-            with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, filename) as chunker:
-                pass            
-
-    def test_good_file(self):
-        """
-        Asserts that a good file can be opened
-        """
+        original = config._64BIT
+        config._64BIT = False
         try:
-            with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
-                pass
-        except Exception:
-            self.fail("Unable to open %s for chunking" % (DEFAULT_FILE))
+            c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE)
+            self.assertEqual(c.dtype, "uint32")
+            self.assertEqual(c.bytes_per_int, 4)
+        finally:
+            config._64BIT = original
 
-    def test_blocks_and_padding(self):
+    def test_block_ids(self):
         """
-        Calculates the number of blocks and padding on the last block.
-        Test then compares those numbers to an actual chunking
+        Tests the generation of block ids
+        The first should be 0
+        The second should be 0 + 1
         """
-        filesize = os.path.getsize(DEFAULT_FILE)
-        blocksize = DEFAULT_K * DEFAULT_SYMBOLSIZE
-        total_blocks = int(math.ceil(filesize / (blocksize * 1.0)))
-        padding_size = blocksize - (filesize % blocksize)
+        c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE)
+        expected_block_id = 0
 
-        with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
+        # Check that first blockid = 0
+        self.assertEqual(c.get_block_id(), expected_block_id)
 
-            for i in xrange(total_blocks):
-                chunk = chunker.chunk()
+        # Check that the next block id = 1
+        expected_block_id = 1
+        self.assertEqual(c.get_block_id(), expected_block_id)
+        
+    
+    def test_64bit_symbolsize(self):
 
-                # We chould have a chunk for all i
-                self.assertIsNotNone(chunk)
-
-                # Assert that the last block has padding
-                if i == total_blocks - 1:
-                    self.assertTrue(chunk.padding == padding_size)
-
-                # And all others do not
-                else:
-                    self.assertTrue(chunk.padding == 0)
-
-            # Continueing to chunk should return none, because
-            # in theory, we have chunked exactly total_blocks
-            self.assertIsNone(chunker.chunk())
-
-    def test_symbols(self):
         """
-        Chunks all of a file and ensure that every
-        chunk has the same number of symbols anmd that each symbol
-        is of length symbolsize
-        """
-        with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
-            chunk = chunker.chunk()
-            symbol_length_in_uint64s = DEFAULT_SYMBOLSIZE / 8 # uint64 for 64 bit systems
-            #symbol_length_in_uint32s = DEFAULT_SYMBOLSIZE / 4 # uint32 for 32 bit systems
-            while(chunk):
-                self.assertTrue(len(chunk) == DEFAULT_K)
+        Asserts that SymbolSizeExceptions are raised for invalid symbol sizes
+        on 64 bit systems
 
-                # Check each symbol to ensure it is symbolsize / 8 uint64s long
-                for s in chunk:
-                    self.assertTrue(len(s) == symbol_length_in_uint64s)
-                chunk = chunker.chunk()
+        A good symbolsize for 64 bit is in increments of 8 BYTES
+        """
+
+        #save the original
+        original = config._64BIT
+
+        try:
+            config._64BIT = True
+
+            # Try a bad symbolsize.   
+            with self.assertRaises(SymbolSizeException):
+                c = Chunker(10, 7)
+
+            try:
+                # Try a good symbol size (exactly 8 BYTES)
+                c = Chunker(10, 8)
+
+                # Try a multiple of 8BYTES
+                c = Chunker(10, 24)
+            except Exception, e:
+                self.fail(e.tostring())
+            
+        finally:
+            # Restore original
+            config._64BIT = original
+
+    def test_32bit_symbolsize(self):
+
+        """
+        Asserts that SymbolSizeExceptions are raised for invalid symbol sizes
+        on 32 bit systems
+
+        A good symbolsize for 32 bit is in increments of 4 BYTES
+        """
+
+        #save the original
+        original = config._64BIT
+
+        try:
+            config._64BIT = False
+            # Try a bad symbolsize.   
+            with self.assertRaises(SymbolSizeException):
+                c = Chunker(10, 3)
+
+            try:
+                # Try a good symbol size (exactly 4 BYTES)
+                c = Chunker(10, 4)
+
+                # Try a multiple of 4 BYTES
+                c = Chunker(10, 16)
+            except Exception, e:
+                self.fail(e.tostring())
+            
+        finally:
+            # Restore original
+            config._64BIT = original
