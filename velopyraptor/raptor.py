@@ -45,6 +45,24 @@ class RaptorR10ParameterException(Exception):
         """
         super(RaptorR10ParameterException, self).__init__(message)
 
+class RaptorR10DecodingScheduleException(Exception):
+    """
+    Indicates a problem occurred during creation of the
+    decoding schedule
+    """
+
+    def __init__(self, specific):
+
+        """
+        Initializes the exception combining the specific problem to
+        the generic problem
+        """
+
+        generic = "A problem occurred while creating the decoding schedule"
+        super(RaptorR10DecodingScheduleException, self).__init__(
+            "%s: %s" % (generic, specific)
+        )
+
 class RaptorR10(object):
 
     """
@@ -315,7 +333,10 @@ class RaptorR10(object):
         """
 
         if len(self.symbols) < self.k:
-            raise Exception ("Not enough encoded symbols to decode")
+            raise RaptorR10DecodingScheduleExceptionException(
+                "Need at least %s symbols decode but only have %s." %
+                (self.k, len(self.symbols))
+            )
 
         a = self.a()
         schedule = self.decoding_schedule(a)
@@ -360,7 +381,9 @@ class RaptorR10(object):
                 row = self.choose_min_degree_row(a, original_degrees, m, i, u, rows_with_r)
 
             if r == 0:
-                raise Exception("Unable to decode.  No nonzero row to choose from v")
+                raise RaptorR10DecodingScheduleException(
+                    "No nonzero row to choose from v"
+                )
 
             # Exchange row with first row of v
             self.exchange_row(a, original_degrees, i, row, schedule)
@@ -407,7 +430,9 @@ class RaptorR10(object):
                         break
 
                 if not a[column][column]:
-                    raise Exception("U lower is of less rank than %s" % u)
+                    raise RaptorR10DecodingScheduleException(
+                        "U lower is of less rank than %s." % u
+                    )
 
             # Loop down through rows below column xoring row column
             for row in xrange(column + 1, m):
