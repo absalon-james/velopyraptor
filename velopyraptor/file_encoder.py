@@ -148,15 +148,15 @@ class FileEncoder(object):
                 # m is the number of parity blocks
                 # NOTE - We could start at k and produce k+m symbols there consisting
                 # entirely of parity blocks and be just as fine
-                for i in xrange(self.k + self.m):
+                for sid in encoder.optimal_symbols(self.k + self.m):
 
                     # Each share will be named its id (share 0 is named 0)
 
                     # The encoder produces an (id, numpy array) tuple
                     self.start_timer()
-                    sid, symbol = encoder.next()
+                    symbol = encoder.ltenc(sid)
                     self.add_time(self.stop_timer(), 'encoding_time')
-                    symbol.tofile(os.path.join(dir_name, str(i)))
+                    symbol.tofile(os.path.join(dir_name, str(sid)))
                     f.close()
 
                 block_name += 1

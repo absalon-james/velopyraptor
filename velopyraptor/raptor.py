@@ -699,3 +699,41 @@ class RaptorR10(object):
             matrix.append(ba)
         return matrix
 
+    def xors_per_symbol(self, esi):
+
+        xors = 0
+        d, a, b = self.triple(esi)
+
+        while b >= self.l:
+            b = (b + a) % self.l_prime
+
+        xors += 1
+
+        for j in xrange(1, min(d, self.l)):
+            b = (b + a) % self.l_prime
+            while b >= self.l:
+                b = (b + a) % self.l_prime
+            xors += 1
+
+        return xors
+        
+    def optimal_symbols(self, how_many, top_esi=5000):
+
+        yielded = 0
+        xors = 1
+        i = 0
+        while yielded < how_many:
+            if self.xors_per_symbol(i) == xors:
+                yielded += 1
+                yield i
+            i += 1
+            if i == 5000:
+                i = 0
+                xors += 1
+
+    def check_symbols(self, top, max_xors):
+
+        for i in xrange(top):
+            xors = self.xors_per_symbol(i)
+            if xors <= max_xors:
+                print "Xors for symbol %s: %s" % (i, xors) 
