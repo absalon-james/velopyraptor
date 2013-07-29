@@ -27,6 +27,8 @@ from distributions.systematic_index import systematic_index
 from bitarray import bitarray
 from schedule import Schedule
 
+import time
+
 MIN_K = 4
 MAX_K = 8192
 
@@ -481,34 +483,75 @@ class RaptorR10(object):
         # Init a to the empty list
         a = []
 
+        # Create the ldpc section
+        a.extend(self.ldpc_section())
+
+        # Create the hdpc section
+        a.extend(self.hdpc_section())
+
+        # Create the lt section
+        a.extend(self.lt_section())
+        return a
+
+    def ldpc_section(self):
+        m = []
         # First vertical section
         # (s x k)ldpc | (s x s)identity | (s x h)zero matrix
         ldpc = self.ldpc(self.k, self.s)
         identity = matrix.identity(self.s)
-        # We dont need a full zero matrix.  the rows are the same
         zero = matrix.zeros(self.s, self.h)
         for i in xrange(self.s):
-            a.append(ldpc[i] + identity[i] + zero[i])
+            m.append(ldpc[i] + identity[i] + zero[i])
+        return m
 
-        ldpc = None
-        zero = None
-        identity = None
-
-        # Second vertical section
+    def hdpc_section(self):
+        m = []
         # (h x (k + s)) half | (h x h)identity
         half = self.half(self.k, self.s, self.h, self.h_prime)
         identity = matrix.identity(self.h)
         for i in xrange(self.h):
-            a.append(half[i] + identity[i])
+            m.append(half[i] + identity[i])
+        return m
 
-        half = None
-        identity = None
-
+    def lt_section(self):
+        m = []
         # Third vertical section
         # (k x l) lt
-        triples = [self.triple(id) for id, symbol in self.symbols]
-        a.extend(self.lt(self.l, self.l_prime, triples))
-        return a
+        for id, symbol in self.symbols:
+            m.append(self.lt_row(id))
+        return m
+
+    def lt_row(self, esi):
+        """
+        Creates a k x l matrix representing xor operations on
+        the intermediate symbols
+
+        Arguments:
+        l -- (k + s + h) such that s and h satisfy precoding relationships
+        l_prime -- next prime number after l
+        triples -- set of k source triples (d, a, b)
+                    d[i] = triples[i][0]
+                    a[i] = triples[i][1]
+                    b[i] = triples[i][2]
+
+        Returns a list of bitarrays representing G_LT
+        """
+        # ba[n] will be k1 if and only if c[b] is used in the xoring of LTEnc
+        ba = bitarray(self.l)
+        ba.setall(False)
+        d, a, b = self.triple(esi)
+
+        while b >= self.l:
+            b = (b + a) % self.l_prime
+
+        ba[b] = True
+
+        for j in xrange(1, min(d, self.l)):
+            b = (b + a) % self.l_prime
+            while b >= self.l:
+                b = (b + a) % self.l_prime
+            ba[b] = True
+        return ba
 
     @classmethod
     def prepass(cls, a, schedule):
@@ -663,77 +706,39 @@ class RaptorR10(object):
             matrix.append(ba)
         return matrix
 
-    @classmethod
-    def lt(cls, l, l_prime, triples):
-        """
-        Creates a k x l matrix representing xor operations on
-        the intermediate symbols
-
-        Arguments:
-        l -- (k + s + h) such that s and h satisfy precoding relationships
-        l_prime -- next prime number after l
-        triples -- set of k source triples (d, a, b)
-                    d[i] = triples[i][0]
-                    a[i] = triples[i][1]
-                    b[i] = triples[i][2]
-
-        Returns a list of bitarrays representing G_LT
-        """
-        matrix = []
-        for i in xrange(len(triples)):
-            # ba[n] will be k1 if and only if c[b] is used in the xoring of LTEnc
-            ba = bitarray(l)
-            ba.setall(False)
-            d, a, b = triples[i]
-
-            while b >= l:
-                b = (b + a) % l_prime
-
-            ba[b] = True
-
-            for j in xrange(1, min(d, l)):
-                b = (b + a) % l_prime
-                while b >= l:
-                    b = (b + a) % l_prime
-                ba[b] = True
-            matrix.append(ba)
-        return matrix
-
     def xors_per_symbol(self, esi):
 
-        xors = 0
+        xors = []
         d, a, b = self.triple(esi)
 
         while b >= self.l:
             b = (b + a) % self.l_prime
 
-        xors += 1
+        xors.append(b)
 
         for j in xrange(1, min(d, self.l)):
             b = (b + a) % self.l_prime
             while b >= self.l:
                 b = (b + a) % self.l_prime
-            xors += 1
+            xors.append(b)
 
         return xors
         
     def optimal_symbols(self, how_many, top_esi=5000):
+        a = []
+        a.extend(self.ldpc_section())
+        a.extend(self.hdpc_section())
 
         yielded = 0
         xors = 1
         i = 0
         while yielded < how_many:
-            if self.xors_per_symbol(i) == xors:
+            ba = self.lt_row(i)
+            if ba.count() == xors and not(ba in a):
                 yielded += 1
+                a.append(ba)
                 yield i
             i += 1
             if i == 5000:
                 i = 0
                 xors += 1
-
-    def check_symbols(self, top, max_xors):
-
-        for i in xrange(top):
-            xors = self.xors_per_symbol(i)
-            if xors <= max_xors:
-                print "Xors for symbol %s: %s" % (i, xors) 
