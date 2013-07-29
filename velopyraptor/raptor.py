@@ -119,7 +119,13 @@ class RaptorR10(object):
         self.k = k
 
         if self.k < MIN_K or self.k > MAX_K:
-            raise RaptorR10ParameterException("k: %s -- k must be between %s and %s" % (self.k, MIN_K, MAX_K))
+            raise RaptorR10ParameterException(
+                "k: %s -- k must be between %s and %s" % (
+                    self.k,
+                    MIN_K,
+                    MAX_K
+                )
+            )
              
         # Let X be the smallest positive integer such that X*(X-1) >= 2*K.
         # a = 1, b =-1 c = -2(k)
@@ -131,12 +137,16 @@ class RaptorR10(object):
         # Let S be the smallest prime integer such that S >= ceil(0.01*K) + X
         self.s = primes.next(math.ceil(0.01 * self.k) + self.x)
         if not self.s:
-            raise RaptorR10ParameterException("s: -- No s found for k: %s and x: %s" % self.k, self.x)
+            raise RaptorR10ParameterException(
+                "s: -- No s found for k: %s and x: %s" % (self.k, self.x)
+            )
 
         # Let H be the smallest integer such that choose(H,ceil(H/2)) >= K + S
         self.h = half.next(self.k + self.s)
         if not self.h:
-            RaptorR10ParameterException("h: Unable to find h for k: %s and s: %s" % (self.k, self.s))
+            RaptorR10ParameterException(
+                "h: Unable to find h for k: %s and s: %s" % (self.k, self.s)
+            )
 
         # Let H' be ceil(H/2)
         self.h_prime = int(math.ceil(self.h / 2.0))
@@ -229,12 +239,13 @@ class RaptorR10(object):
             numpy.bitwise_xor(result, self.i_symbols[b], result)
         return result
 
-    def choose_min_degree_row(self, a, original_degrees, m, i, u, rows_with_r):
+    def min_degree_row(self, a, o_degrees, m, i, u, rows_with_r):
         """
         Chooses a minimum degree row out of rows with r
 
         Arguments:
         a           -- List of bitarrays representing matrix a
+        o_degrees   -- List of original row degrees
         m           -- Integer n + s + h(a should have m rows)
         i           -- Integer representing the i'th
                        iteration in reducing matrix V
@@ -246,12 +257,12 @@ class RaptorR10(object):
         min_degree = m + 1
         min_row = None
         for r in rows_with_r:
-            if original_degrees[r] < min_degree:
-                min_degree = original_degrees[r]
+            if o_degrees[r] < min_degree:
+                min_degree = o_degrees[r]
                 min_row = r
         return min_row
 
-    def choose_row_from_graph(self, a, m, i, u, rows_with_r):
+    def row_from_graph(self, a, m, i, u, rows_with_r):
         """
         Builds a graph from rows where rows are edges and columns are vertices.
         Then chooses the first edge from the largest component
@@ -289,7 +300,7 @@ class RaptorR10(object):
         row = data['row_index']
         return row
 
-    def rows_in_v_with_min_r(self, a, m, i, u):
+    def rows_with_min_r(self, a, m, i, u):
         """
         Returns a tuple with the minimum number of 1s in a row in v
         and the indexes of the rows containing that number of 1s
@@ -361,7 +372,9 @@ class RaptorR10(object):
         """
         m = self.s + self.h + len(self.symbols)
         schedule = Schedule(self.l, (self.s + self.h + len(self.symbols)))
-        original_degrees = [row.count() for row in a]
+
+        # Original degrees
+        o_degrees = [row.count() for row in a]
 
         # Take a quick stab at trying to reduce the number of xors
         self.prepass(a, schedule)
@@ -374,11 +387,11 @@ class RaptorR10(object):
         # matrices
         while (i + u) < self.l:
 
-            r, rows_with_r = self.rows_in_v_with_min_r(a, m, i, u)
+            r, rows_with_r = self.rows_with_min_r(a, m, i, u)
             if r == 2:
-                row = self.choose_row_from_graph(a, m, i, u, rows_with_r)
+                row = self.row_from_graph(a, m, i, u, rows_with_r)
             else:
-                row = self.choose_min_degree_row(a, original_degrees, m, i, u, rows_with_r)
+                row = self.min_degree_row(a, o_degrees, m, i, u, rows_with_r)
 
             if r == 0:
                 raise RaptorR10DecodingScheduleException(
@@ -386,7 +399,7 @@ class RaptorR10(object):
                 )
 
             # Exchange row with first row of v
-            self.exchange_row(a, original_degrees, i, row, schedule)
+            self.exchange_row(a, o_degrees, i, row, schedule)
 
             # Reorder columns -- place a 1 in first column of v,
             # place remaining ones in right side of v by reordering columns
@@ -426,7 +439,7 @@ class RaptorR10(object):
                 for row in xrange(column + 1, m):
                     if a[row][column]:
                         # swap rows row and column
-                        self.exchange_row(a, original_degrees, column, row, schedule)
+                        self.exchange_row(a, o_degrees, column, row, schedule)
                         break
 
                 if not a[column][column]:
@@ -567,13 +580,14 @@ class RaptorR10(object):
         schedule.exchange_column(c1, c2)
 
     @classmethod
-    def exchange_row(cls, a, original_degrees, r1, r2, schedule):
+    def exchange_row(cls, a, o_degrees, r1, r2, schedule):
         """
         Exchanges row r1 of a with row r2 of a and records the operation
         in the schedule
 
         Arguments:
         a -- list of bitarrays representing a
+        o_degrees -- List of original degrees of rows
         r1 -- Integer id of first row to exchange
         r2 -- Integer id of second row to exchange
         schedule -- Schedule to record the operation in
@@ -583,9 +597,9 @@ class RaptorR10(object):
         a[r1] = a[r2]
         a[r2] = temp
 
-        temp = original_degrees[r1]
-        original_degrees[r1] = original_degrees[r2]
-        original_degrees[r2] = temp
+        temp = o_degrees[r1]
+        o_degrees[r1] = o_degrees[r2]
+        o_degrees[r2] = temp
 
         # Record the operation
         schedule.exchange_row(r1, r2)
