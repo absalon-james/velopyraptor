@@ -28,7 +28,7 @@ class FileEncoder(object):
     out the shares
     """
 
-    def __init__(self, k, s, m, input_file, output_dir):
+    def __init__(self, k, s, m, input_file, output_dir, optimal=False):
         """
         Initializes an instance of a file encoder
 
@@ -48,6 +48,7 @@ class FileEncoder(object):
             'chunking_time': 0,
             'encoding_time': 0
         }
+        self.optimal = optimal
         self.t = None
 
     def start_timer(self):
@@ -103,6 +104,12 @@ class FileEncoder(object):
         except:
             self.exit("Unable to create directory %s." % self.output_dir)
 
+    def get_symbol_iter(self, encoder):
+
+        if self.optimal:
+            return encoder.optimal_symbols(self.k + self.m)
+        return xrange(self.k + self.m)
+        
     def encode(self):
         """
         Creates a file chunker and iterates over each chunk decoding a chunk
@@ -148,7 +155,7 @@ class FileEncoder(object):
                 # m is the number of parity blocks
                 # NOTE - We could start at k and produce k+m symbols there consisting
                 # entirely of parity blocks and be just as fine
-                for sid in encoder.optimal_symbols(self.k + self.m):
+                for sid in self.get_symbol_iter(encoder):
 
                     # Each share will be named its id (share 0 is named 0)
 
@@ -186,9 +193,10 @@ if __name__ == '__main__':
     parser.add_argument("--k", default=10, type=int, help="Number of nodes to split encoding.(default 10)")
     parser.add_argument('--m', default=4, type=int, help="Number of parity blocks to compute.(default 4)")
     parser.add_argument('--s', default=(1 * 1024 * 1024), type=int, help="Symbol size in bytes(default 1 * 1024 * 1024)")
+    parser.add_argument('-o', '--o', default=False, action="store_true", help="Use optimal symbols when encoding.")
 
     args = parser.parse_args()
-    encoder = FileEncoder(args.k, args.s, args.m, args.file, args.directory)
+    encoder = FileEncoder(args.k, args.s, args.m, args.file, args.directory, optimal=args.o)
     encoder.encode()
 
     print "Finished encoding %s into directory %s" % (args.file, args.directory)
