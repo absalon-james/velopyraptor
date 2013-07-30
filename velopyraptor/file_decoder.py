@@ -162,7 +162,7 @@ class FileDecoder(object):
                     self.start_timer()
 
                     symbol = numpy.fromfile(os.path.join(blockdir, _file), dtype='uint64')
-                    self.add_time(self.stop_timer(), 'decoding_time')
+                    self.add_time(self.stop_timer(), 'io_time')
 
                     # Add the symbol to the decoder.
                     # A symbol is a (integer, numpy array) tuple
@@ -171,6 +171,11 @@ class FileDecoder(object):
                 except Exception, e:
                     continue
                     pass
+
+                print "Read symbols: %s -- k: %s" % (read_symbols, k)
+                if read_symbols > k + 1:
+                    print "Have enough symbols. breaking"
+                    break
 
             # Ideally we want more than k encoded symbols.
             # We will fail with less than k
