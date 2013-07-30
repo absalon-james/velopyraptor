@@ -133,8 +133,6 @@ class FileDecoder(object):
         blockdir = os.path.join(self.input_dir, str(block))
         while os.path.exists(blockdir):
 
-            print "Decoding block %s" % blockdir
-
             # Attempt to read metadata for this block
             self.start_timer()
             k, padding = self.read_block_meta_data(blockdir)
@@ -172,9 +170,7 @@ class FileDecoder(object):
                     continue
                     pass
 
-                print "Read symbols: %s -- k: %s" % (read_symbols, k)
                 if read_symbols > k + 1:
-                    print "Have enough symbols. breaking"
                     break
 
             # Ideally we want more than k encoded symbols.
