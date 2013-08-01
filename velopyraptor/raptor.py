@@ -207,10 +207,9 @@ class RaptorR10(object):
         symbolsize = len(self.symbols[0][1])
 
         # Creates the first s + h 0 rows of length symbolsize
-        zero = [0 for i in xrange(symbolsize)]
-        zero = numpy.array(zero, dtype='uint64')
+        zeros = numpy.zeros(symbolsize, dtype="uint64")
         for i in xrange(self.s + self.h):
-            d.append(numpy.array(zero, copy=True))
+            d.append(numpy.array(zeros, copy=True))
 
         # Append the symbols that we do have
         for id, symbol in self.symbols:
@@ -232,13 +231,13 @@ class RaptorR10(object):
         while b >= self.l:
             b = (b + a) % self.l_prime
 
-        result = copy.deepcopy(self.i_symbols[b])
+        result = numpy.array(self.i_symbols[b], copy=True)
 
         for j in xrange(1, min(d, self.l)):
             b = (b + a) % self.l_prime
             while b >= self.l:
                 b = (b + a) % self.l_prime
-            numpy.bitwise_xor(result, self.i_symbols[b], result)
+            self.xor_arrays(self.i_symbols[b], result)
         return result
 
     def min_degree_row(self, a, o_degrees, m, i, u, rows_with_r):
@@ -359,7 +358,7 @@ class RaptorR10(object):
         self.xors = len(schedule.xors)
         self.i_symbols = [None for i in xrange(self.l)]
         for xor_row, target_row in schedule.xors:
-            numpy.bitwise_xor(D[target_row], D[xor_row], D[target_row])
+            self.xor_arrays(D[xor_row], D[target_row])
 
         for i in xrange(self.l):
             self.i_symbols[schedule.c[i]] = D[schedule.d[i]]
@@ -742,3 +741,6 @@ class RaptorR10(object):
             if i == 5000:
                 i = 0
                 xors += 1
+
+    def xor_arrays(self, source, target):
+        numpy.bitwise_xor(source, target, target)
