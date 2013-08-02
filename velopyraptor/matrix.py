@@ -138,3 +138,38 @@ def multiply(a, b):
                 row[j] ^= a[i][k] & b[k][j]
         matrix.append(row)
     return matrix
+
+def rank(a):
+    """
+    Determines the rank of bit matrix a
+
+    Arguments:
+    a -- List of even length bitarrays
+    """
+
+    m = copy.deepcopy(a)
+    rows = len(m)
+
+    for i in xrange(rows):
+
+        # Swap a row with a one into position i, i
+        if not m[i][i]:
+            for j in xrange(i + 1, rows):
+                if m[j][i]:
+                    m[i] ^= m[j]
+                    m[j] ^= m[i]
+                    m[i] ^= m[j]
+                    break
+
+        # loop down xoring all rows beneath the pivot
+        for j in xrange(i + 1, rows):
+            if m[j][i]:
+                m[j] ^= m[i]
+
+    # We should not be in upper triangular form
+    # count th enumber of non zero rows
+    rank = 0
+    for row in m:
+        if row.count():
+            rank += 1
+    return rank

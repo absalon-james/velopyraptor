@@ -141,3 +141,37 @@ class TestMatrix(unittest.TestCase):
         for i in xrange(len(identity)):
             self.assertTrue(result[i] == identity[i])
 
+    def test_rank_2x2_zeros(self):
+        """
+        Tests that a 2x2 zero matrix's rank is 0
+        """
+        m = [bitarray("00"), bitarray("00")]
+        self.assertTrue(matrix.rank(m) == 0)
+
+    def test_rank_2x2_identity(self):
+        """
+        Tests that a 2x2 identity matrix's rank is 2
+        """
+        m = [bitarray("10"), bitarray("01")]
+        self.assertTrue(matrix.rank(m) == 2)
+
+    def test_rank_2x2_duplicate(self):
+        """
+        Tests that a 2x2 matrix with two non zero rows
+        that are identical have a rank of 1
+        """
+        m = [bitarray("10"), bitarray("10")]
+        rank = matrix.rank(m)
+        self.assertTrue(matrix.rank(m) == 1)
+
+    def test_rank_5x5_partial_identity(self):
+        """
+        Tests that a 5x5 partial identity matrix's rank
+        is the number of non zero rows
+        """
+        m = [bitarray("10000"),
+             bitarray("00000"),
+             bitarray("00000"),
+             bitarray("00000"),
+             bitarray("00001")]
+        self.assertTrue(matrix.rank(m) == 2)
