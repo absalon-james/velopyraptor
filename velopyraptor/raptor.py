@@ -92,8 +92,8 @@ class RaptorR10(object):
             All other parameters depend upon k
 
         Keyword Arguments:
-        prepass -- Boolean Sets wether or not a prepass should be made
-        optimal_symbols -- Attempts to produce only symbols requiring
+        use_prepass -- Boolean Sets wether or not a prepass should be made
+        use_optimal_esis -- Attempts to produce only symbols requiring
             the least amount of XORS.
         """
         self.set_params(k)
