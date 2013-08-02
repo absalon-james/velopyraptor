@@ -16,21 +16,27 @@ limitations under the License.
 import copy
 import math
 import matrix
+import networkx
+import numpy
+from bitarray import bitarray
+
+import config
 import distributions.degree as degree
 import distributions.gray as gray
 import distributions.half as half
+import distributions.optimal_esi as optimal_esi
 import distributions.primes as primes
 import distributions.random as random
-import networkx
-import numpy
 from distributions.systematic_index import systematic_index
-from bitarray import bitarray
 from schedule import Schedule
-
-import time
 
 MIN_K = 4
 MAX_K = 8192
+
+if config._64BIT:
+    DTYPE = 'uint64'
+else:
+    DTYPE = 'uint32'
 
 class RaptorR10ParameterException(Exception):
 
@@ -79,13 +85,24 @@ class RaptorR10(object):
     on the known symbols to produce the intermediate symbols
     """
 
-    def __init__(self, k):
+    def __init__(self, k, use_prepass=True, use_optimal_esis=False):
         """
         Arguments:
         k -- Integer representing number of source symbols.
             All other parameters depend upon k
+
+        Keyword Arguments:
+        prepass -- Boolean Sets wether or not a prepass should be made
+        optimal_symbols -- Attempts to produce only symbols requiring
+            the least amount of XORS.
         """
         self.set_params(k)
+
+        # Set prepass
+        self.use_prepass = use_prepass
+
+        # Set optimal_symbols
+        self.use_optimal_esis = use_optimal_esis
 
         # Initialized current id to 0 - this will be incremented when
         # next() is called
@@ -99,7 +116,10 @@ class RaptorR10(object):
         Returns the next id to produce the next encoded symbol
         Returns an integer
         """
-        r = self.current_id
+        if self.use_optimal_esis:
+            r = optimal_esi.get_esi(self.k, self.current_id)
+        else:
+            r = self.current_id
         self.current_id += 1
         return r
 
@@ -207,7 +227,7 @@ class RaptorR10(object):
         symbolsize = len(self.symbols[0][1])
 
         # Creates the first s + h 0 rows of length symbolsize
-        zeros = numpy.zeros(symbolsize, dtype="uint64")
+        zeros = numpy.zeros(symbolsize, dtype=DTYPE)
         for i in xrange(self.s + self.h):
             d.append(numpy.array(zeros, copy=True))
 
@@ -378,7 +398,8 @@ class RaptorR10(object):
         o_degrees = [row.count() for row in a]
 
         # Take a quick stab at trying to reduce the number of xors
-        self.prepass(a, schedule)
+        if self.use_prepass:
+            self.prepass(a, schedule)
 
         # V is defined as the last (m - i rows and columns i through l - u)
         i = 0
@@ -705,25 +726,29 @@ class RaptorR10(object):
             matrix.append(ba)
         return matrix
 
-    def xors_per_symbol(self, esi):
+    @classmethod
+    def xor_arrays(cls, source, target):
+        """
+        Moved to its own function for profiling purposes.
+        May want to consider moving out to inline.
+        The source array will be xored into place into
+        the target array
 
-        xors = []
-        d, a, b = self.triple(esi)
+        Arguments:
+        source -- Numpy array source array
+        target -- Numpy array target array
+        """
+        numpy.bitwise_xor(source, target, target)
 
-        while b >= self.l:
-            b = (b + a) % self.l_prime
+    def gen_optimal_symbols(self, how_many):
+        """
+        Used in generating the sequences of optimal symbols.
+        Optimal symbols should be pulled from a look up table.  The function
+        should really only be used to populate that table.
 
-        xors.append(b)
-
-        for j in xrange(1, min(d, self.l)):
-            b = (b + a) % self.l_prime
-            while b >= self.l:
-                b = (b + a) % self.l_prime
-            xors.append(b)
-
-        return xors
-        
-    def optimal_symbols(self, how_many, top_esi=5000):
+        Arguments:
+        how_many -- Integer number of optimal symbols to produce
+        """
         a = []
         a.extend(self.ldpc_section())
         a.extend(self.hdpc_section())
@@ -742,5 +767,3 @@ class RaptorR10(object):
                 i = 0
                 xors += 1
 
-    def xor_arrays(self, source, target):
-        numpy.bitwise_xor(source, target, target)

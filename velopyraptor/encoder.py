@@ -23,14 +23,14 @@ class Encoder(RaptorR10):
     decoder only we decode from the source
     """
 
-    def __init__(self, k, symbols):
+    def __init__(self, k, symbols, **kwargs):
         """
         Arguments:
         k       -- Integer number of source symbols
         symbols -- List of k source symbols to decode
         """
         # Use parent class to gen parameters
-        super(Encoder, self).__init__(k)
+        super(Encoder, self).__init__(k, **kwargs)
         self.symbols = symbols
         self.calculate_i_symbols()
 

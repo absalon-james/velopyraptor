@@ -104,12 +104,6 @@ class FileEncoder(object):
         except:
             self.exit("Unable to create directory %s." % self.output_dir)
 
-    def get_symbol_iter(self, encoder):
-
-        if self.optimal:
-            return encoder.optimal_symbols(self.k + self.m)
-        return xrange(self.k + self.m)
-        
     def encode(self):
         """
         Creates a file chunker and iterates over each chunk decoding a chunk
@@ -139,7 +133,7 @@ class FileEncoder(object):
                 source_symbols = [(id, block[id]) for id in xrange(self.k)]
 
                 self.start_timer()
-                encoder = Encoder(self.k, source_symbols)
+                encoder = Encoder(self.k, source_symbols, use_optimal_esis=self.optimal)
                 self.add_time(self.stop_timer(), 'encoding_time')
 
                 # Write padding and k parameters that will be used
@@ -155,15 +149,12 @@ class FileEncoder(object):
                 # m is the number of parity blocks
                 # NOTE - We could start at k and produce k+m symbols there consisting
                 # entirely of parity blocks and be just as fine
-                for sid in self.get_symbol_iter(encoder):
-
-                    # Each share will be named its id (share 0 is named 0)
-
+                for esi in xrange(self.k + self.m):
                     # The encoder produces an (id, numpy array) tuple
                     self.start_timer()
-                    symbol = encoder.ltenc(sid)
+                    esi, symbol = encoder.next()
                     self.add_time(self.stop_timer(), 'encoding_time')
-                    symbol.tofile(os.path.join(dir_name, str(sid)))
+                    symbol.tofile(os.path.join(dir_name, str(esi)))
                     f.close()
 
                 block_name += 1
