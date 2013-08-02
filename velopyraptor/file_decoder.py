@@ -164,19 +164,21 @@ class FileDecoder(object):
 
                     # Add the symbol to the decoder.
                     # A symbol is a (integer, numpy array) tuple
-                    decoder.append((int(_file), symbol))
+                    can_decode = decoder.append((int(_file), symbol))
                     read_symbols += 1
+                    if can_decode:
+                        break
                 except Exception, e:
                     continue
                     pass
-
-                if read_symbols > k + 1:
-                    break
 
             # Ideally we want more than k encoded symbols.
             # We will fail with less than k
             if read_symbols < k:
                 self.exit("There were not sufficient symbols to recover block %s" % block)
+
+            if not can_decode:
+                self.exit("A decoding schedule was not possible with the symbols provided.")
 
             # Instruct decoder to calculate intermediate symbols from
             # known encoding symbols
