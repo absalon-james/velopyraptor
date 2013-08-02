@@ -166,7 +166,12 @@ def rank(a):
             if m[j][i]:
                 m[j] ^= m[i]
 
-    # We should not be in upper triangular form
+    # Look and xor duplicate rows
+    for i in xrange(rows):
+        for j in xrange(i + 1, rows):
+            if m[i] == m[j]:
+                m[j] ^= m[i]
+
     # count th enumber of non zero rows
     rank = 0
     for row in m:
