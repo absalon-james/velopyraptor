@@ -89,5 +89,18 @@ for i in xrange(k):
     print "%s -- %s" % (esi, symbol.tostring())
 
 """
-This code has not been profiled for optimization yet.
+Keyword options to the RaptorR10 coder
+
+use_prepass - Makes an attempt to reduce the number of xors prior to creating
+    the schedule normally.
+
+use_optimal_esis - Use optimal encoding symbol ids.  This reduces encoding
+    time by choosing esis that require the least amount of xors to produce.
+    Decoding time from symbols created by choosing optimal esis is further
+    reduced as building a schedule from optimal esis requires far less XORS
+    to recover the intermediate symbols. However, this is dangerous and
+    be used with caution.  It seems to be easier to create symbol collisions
+    and end up with 0 rows in matrix a while producing the decoding schedule.
+    Be prepared to produce more esis than normal to reduce the chance of
+    error. use_optimal_esis is not needed for decoding.
 """
