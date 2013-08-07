@@ -573,6 +573,20 @@ class RaptorR10(object):
             ba[b] = True
         return ba
 
+    def can_decode(self):
+        """
+        Determines whether or not decoding can take place
+
+        Returns true for success, false otherwise
+        """        
+        try:
+            a = self.a()
+            self.decoding_schedule(a)
+            return True
+        except:
+            pass
+        return False
+
     @classmethod
     def prepass(cls, a, schedule):
 

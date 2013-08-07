@@ -48,12 +48,7 @@ class Decoder(RaptorR10):
         symbol_tuple -- Should be a 2 tuple (Integer id, Bitarray symbol)
         """
         self.symbols.append(symbol_tuple)
-        try:
-            a = self.a()
-            schedule = self.decoding_schedule(a)
-            return True
-        except Exception, e:
-            return False
+        return self.can_decode()
 
     def decode(self):
         """
