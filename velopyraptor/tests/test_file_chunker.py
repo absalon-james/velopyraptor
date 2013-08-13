@@ -1,3 +1,4 @@
+import hashlib
 import math
 import os
 import sys
@@ -73,12 +74,35 @@ class TestFileChunker(unittest.TestCase):
         """
         with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
             chunk = chunker.chunk()
-            symbol_length_in_uint64s = DEFAULT_SYMBOLSIZE / 8 # uint64 for 64 bit systems
-            #symbol_length_in_uint32s = DEFAULT_SYMBOLSIZE / 4 # uint32 for 32 bit systems
             while(chunk):
                 self.assertTrue(len(chunk) == DEFAULT_K)
-
                 # Check each symbol to ensure it is symbolsize / 8 uint64s long
                 for s in chunk:
-                    self.assertTrue(len(s) == symbol_length_in_uint64s)
+                    self.assertTrue(len(s) == DEFAULT_SYMBOLSIZE)
                 chunk = chunker.chunk()
+
+    def test_content(self):
+        """
+        Tests the content of the string is the same as the content
+        of the chunked string minus the padding
+        """
+        f = open(DEFAULT_FILE)
+        string = f.read()
+        f.close()
+        md5 = hashlib.md5(string)
+        original_digest = md5.hexdigest()
+
+        new_string = ""
+        with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
+            chunk = chunker.chunk()
+            while(chunk):
+                for symbol in chunk:
+                    new_string += symbol
+                if chunk.padding > 0:
+                    new_string = new_string[:-(chunk.padding)]
+                chunk = chunker.chunk()
+
+        md5 = hashlib.md5(new_string)
+        new_digest = md5.hexdigest()
+        self.assertEqual(original_digest, new_digest)
+

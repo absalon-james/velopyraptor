@@ -85,7 +85,7 @@ class TestEncodingDecoding(unittest.TestCase):
                 decoded = bytearray()
                 for i in xrange(k):
                     esi, s = decoder.next()
-                    decoded += s.tostring()
+                    decoded += s 
                 decoder = None
 
                 if padding:

@@ -13,9 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import numpy
+import io
 import os
 import config
+from cStringIO import StringIO as StringIO
 from block import Source as SourceBlock
 
 class SymbolSizeException(Exception):
@@ -100,7 +101,7 @@ class FileChunker(Chunker):
         self.filesize = os.path.getsize(filename)
 
         try:
-            self._f = open(filename, 'rb')
+            self._f = io.open(filename, 'rb')
         except Exception:
             raise Exception('Unable to open file %s for reading.' % filename)
 
@@ -112,7 +113,7 @@ class FileChunker(Chunker):
 
     def chunk(self):
         """
-        Should return a block of uint numpy arrays
+        Should return a block of strings
         Attempts to read k symbols from the file and pads a block
         so that the block is k symbols of symbolsize * 8 bits
         """
@@ -144,21 +145,13 @@ class FileChunker(Chunker):
         """
         Reads symbolsize bytes from the file
         Returns None if the length is 0
-        Returns a numpy array of uints otherwise
+        Returns a string otherwise
         """
 
-        # Calculate remainin unread bytes
-        difference = self.filesize - self._f.tell()
-
-        # Read a complete symbol of uints
-        if difference > self.symbolsize:
-            return numpy.fromfile(self._f, dtype=self.dtype, count=self.ints_to_read)
-
-        # Read the remainder
-        elif difference > 0:
-            return self._f.read()
-
-        return None
+        s = self._f.read(self.symbolsize)
+        if not len(s):
+            return None
+        return s
 
     def close(self):
         """
@@ -188,13 +181,21 @@ class StringChunker(Chunker):
         self.value = value
         self.bytesread = 0
         self.stringsize = len(value)
+        self.stream = StringIO(value)
+
+    def __enter__(self):
+        return self 
+
+    def __exit__(self, type, value, traceback):
+        self.close()
 
     def chunk(self):
         """
-        Should return a block of uint numpy arrays
+        Should return a block of strings
         Attempts to read k symbols from the file and pads a block
         so that the block is k symbols of symbolsize bytes
         """
+
         if self.bytesread >= self.stringsize:
             return None
 
@@ -219,24 +220,17 @@ class StringChunker(Chunker):
         """
         Reads symbolsize bytes from the file
         Returns None if the length is 0
-        Returns a numpy array of uints unless there are less than
-        ints to read of data left in which case a string is returned.
+        Returns a string of length symbolsize unless there aren't enough bytes
+        to create a complete symbol
         """
 
-        # Calculate remainin unread bytes
-        difference = self.stringsize - self.bytesread
+        s = self.stream.read(self.symbolsize)
+        if not len(s):
+            return None
+        return s
 
-        # Read a complete symbol of uints
-        if difference > self.symbolsize:
-            _slice = self.value[self.bytesread:self.bytesread + self.symbolsize]
-            array = numpy.fromstring(_slice, dtype=self.dtype, count=self.ints_to_read)
-            self.bytesread += len(_slice)
-            return array
-
-        # Read the remainder
-        elif difference > 0:
-            _slice = self.value[self.bytesread:]
-            self.bytesread += len(_slice)
-            return _slice
-
-        return None
+    def close(self):
+        try:
+            self.stream.close()
+        except:
+            pass

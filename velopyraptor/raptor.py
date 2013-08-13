@@ -13,14 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import copy
+import cStringIO
 import math
 import matrix
 import networkx
-import numpy
 from bitarray import bitarray
 
 import config
+import xorcpp
 import distributions.degree as degree
 import distributions.gray as gray
 import distributions.half as half
@@ -227,9 +227,9 @@ class RaptorR10(object):
         symbolsize = len(self.symbols[0][1])
 
         # Creates the first s + h 0 rows of length symbolsize
-        zeros = numpy.zeros(symbolsize, dtype=DTYPE)
+        zeros = '\x00' * symbolsize
         for i in xrange(self.s + self.h):
-            d.append(numpy.array(zeros, copy=True))
+            d.append(self.clone_string(zeros))
 
         # Append the symbols that we do have
         for id, symbol in self.symbols:
@@ -244,14 +244,14 @@ class RaptorR10(object):
         Arguments:
         id -- Integer that indicates the id'th symbol is to be encoded
 
-        Returns a numpy array
+        Returns a string
         """
         
         d, a, b = self.triple(id)
         while b >= self.l:
             b = (b + a) % self.l_prime
 
-        result = numpy.array(self.i_symbols[b], copy=True)
+        result = self.clone_string(self.i_symbols[b])
 
         for j in xrange(1, min(d, self.l)):
             b = (b + a) % self.l_prime
@@ -361,7 +361,7 @@ class RaptorR10(object):
         Applies the raptor decoding process to prevent multiplying the inverse
         of a by the source symbols
 
-        Returns list of numpy arrays representing intermediate symbols
+        Returns list of strings representing intermediate symbols
         """
 
         if len(self.symbols) < self.k:
@@ -745,14 +745,27 @@ class RaptorR10(object):
         """
         Moved to its own function for profiling purposes.
         May want to consider moving out to inline.
-        The source array will be xored into place into
-        the target array
+        The source string will be xored into place into
+        the target string
 
         Arguments:
-        source -- Numpy array source array
-        target -- Numpy array target array
+        source -- Source string
+        target -- Source string
         """
-        numpy.bitwise_xor(source, target, target)
+        xorcpp.xorcpp_inplace(source, target)
+
+    def clone_string(cls, source):
+        """
+        Trying to have a fast string copy
+        May need to replace with c
+
+        Arguments:
+        source -- Source string to clone
+        """ 
+        stream = cStringIO.StringIO()
+        stream.write(source)
+        value = stream.getvalue()
+        return value
 
     def gen_optimal_symbols(self, how_many):
         """

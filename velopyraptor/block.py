@@ -13,14 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import numpy
 import config
+import copy
 
 class Source(list):
 
     """
-    Represents a list of unsigned integer arrays that are the source symbols
-    for an encoding
+    Represents a list of string source symbols for an encoding
     """
 
     def __init__(self, k, symbolsize, block_id):
@@ -50,20 +49,15 @@ class Source(list):
         # loop through checking each symbol
         for i in xrange(len(self)):
 
-            # Look for strings that are not numpy arrays
-            if not isinstance(self[i], numpy.ndarray):
-
-                # Figure out padding if any
-                difference = self.symbolsize - len(self[i])
-                self.padding += difference
-                self[i] += b'\x00' * difference
-
-                # Convert to numpy array
-                self[i] = numpy.fromstring(self[i], dtype=self.dtype)
+            if len(self[i]) < self.symbolsize:
+                # Add to padding
+                self.padding += self.symbolsize - len(self[i])
+                # Do the symbol padding
+                self[i] = self[i].ljust(self.symbolsize, "\x00")
 
         # Add as many zero symbols as necessary to have a full block
-        for i in xrange(len(self), self.k):
-            src = b'\x00' * self.symbolsize
-            self.padding += self.symbolsize
-            array = numpy.fromstring(src, dtype=self.dtype)
-            self.append(array)
+        if len(self) < self.k:
+            zeros = "\x00" * self.symbolsize
+            for i in xrange(len(self), self.k):
+                self.padding += self.symbolsize
+                self.append(copy.copy(zeros))

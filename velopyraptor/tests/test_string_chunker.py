@@ -62,13 +62,11 @@ class TestChunker(unittest.TestCase):
         string = self.get_string()
         with StringChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, string) as chunker:
             chunk = chunker.chunk()
-            symbol_length_in_uints = DEFAULT_SYMBOLSIZE / chunker.bytes_per_int
             while(chunk):
                 self.assertTrue(len(chunk) == DEFAULT_K)
-
                 # Check each symbol to ensure it is symbolsize / bytes per int uints long
                 for s in chunk:
-                    self.assertTrue(len(s) == symbol_length_in_uints)
+                    self.assertTrue(len(s) == DEFAULT_SYMBOLSIZE)
                 chunk = chunker.chunk()
 
     def test_content(self):
@@ -86,7 +84,7 @@ class TestChunker(unittest.TestCase):
             chunk = chunker.chunk()
             while(chunk):
                 for symbol in chunk:
-                    new_string += symbol.tostring()
+                    new_string += symbol
                 if chunk.padding > 0:
                     new_string = new_string[:-(chunk.padding)]
                 chunk = chunker.chunk()
