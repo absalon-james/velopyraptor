@@ -36,8 +36,7 @@ class TestEncodingDecoding(unittest.TestCase):
     def test_with_all_k_s(self):
 
         k_min = 4
-        k_max = 10
-
+        k_max = 25
         ks_that_fail = []
 
         for i in xrange(k_min, k_max + 1):

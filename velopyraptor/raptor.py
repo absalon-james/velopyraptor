@@ -20,6 +20,7 @@ import networkx
 from bitarray import bitarray
 
 import config
+import cloner
 import xorcpp
 import distributions.degree as degree
 import distributions.gray as gray
@@ -126,7 +127,7 @@ class RaptorR10(object):
     def next(self):
         """
         Returns the next encoded symbol
-        Return is a tuple (symbol id, bitarray)
+        Return is a tuple (symbol id, string)
         """
         symbol_id = self._get_next_id()
         return symbol_id, self.ltenc(symbol_id)
@@ -228,8 +229,9 @@ class RaptorR10(object):
 
         # Creates the first s + h 0 rows of length symbolsize
         zeros = '\x00' * symbolsize
-        for i in xrange(self.s + self.h):
-            d.append(self.clone_string(zeros))
+        with cloner.StringCloner(zeros) as zerocloner:
+            for i in xrange(self.s + self.h):
+                d.append(zerocloner.clone())
 
         # Append the symbols that we do have
         for id, symbol in self.symbols:
@@ -251,13 +253,14 @@ class RaptorR10(object):
         while b >= self.l:
             b = (b + a) % self.l_prime
 
-        result = self.clone_string(self.i_symbols[b])
+        with cloner.StringCloner(self.i_symbols[b]) as zerocloner:
+            result = zerocloner.clone()
 
         for j in xrange(1, min(d, self.l)):
             b = (b + a) % self.l_prime
             while b >= self.l:
                 b = (b + a) % self.l_prime
-            self.xor_arrays(self.i_symbols[b], result)
+            self.xor_strings(self.i_symbols[b], result)
         return result
 
     def min_degree_row(self, a, o_degrees, m, i, u, rows_with_r):
@@ -365,7 +368,7 @@ class RaptorR10(object):
         """
 
         if len(self.symbols) < self.k:
-            raise RaptorR10DecodingScheduleExceptionException(
+            raise RaptorR10DecodingScheduleException(
                 "Need at least %s symbols decode but only have %s." %
                 (self.k, len(self.symbols))
             )
@@ -378,7 +381,7 @@ class RaptorR10(object):
         self.xors = len(schedule.xors)
         self.i_symbols = [None for i in xrange(self.l)]
         for xor_row, target_row in schedule.xors:
-            self.xor_arrays(D[xor_row], D[target_row])
+            self.xor_strings(D[xor_row], D[target_row])
 
         for i in xrange(self.l):
             self.i_symbols[schedule.c[i]] = D[schedule.d[i]]
@@ -741,7 +744,7 @@ class RaptorR10(object):
         return matrix
 
     @classmethod
-    def xor_arrays(cls, source, target):
+    def xor_strings(cls, source, target):
         """
         Moved to its own function for profiling purposes.
         May want to consider moving out to inline.
@@ -753,19 +756,6 @@ class RaptorR10(object):
         target -- Source string
         """
         xorcpp.xorcpp_inplace(source, target)
-
-    def clone_string(cls, source):
-        """
-        Trying to have a fast string copy
-        May need to replace with c
-
-        Arguments:
-        source -- Source string to clone
-        """ 
-        stream = cStringIO.StringIO()
-        stream.write(source)
-        value = stream.getvalue()
-        return value
 
     def gen_optimal_symbols(self, how_many):
         """

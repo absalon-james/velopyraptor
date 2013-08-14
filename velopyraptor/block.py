@@ -15,6 +15,7 @@ limitations under the License.
 """
 import config
 import copy
+import cloner
 
 class Source(list):
 
@@ -44,7 +45,8 @@ class Source(list):
     def pad(self):
         """
         Pads the block to have k symbols of each symbolsize bytes.
-        Each symbol will be interepreted as an array of unsigned integers        """
+        Each symbol will be interepreted as an string
+        """
 
         # loop through checking each symbol
         for i in xrange(len(self)):
@@ -57,7 +59,11 @@ class Source(list):
 
         # Add as many zero symbols as necessary to have a full block
         if len(self) < self.k:
+
+            # Clone the strings, with our fast xor c extension
+            # Strings are mutable and will be changed
             zeros = "\x00" * self.symbolsize
-            for i in xrange(len(self), self.k):
-                self.padding += self.symbolsize
-                self.append(copy.copy(zeros))
+            with cloner.StringCloner(zeros) as zerocloner:
+                for i in xrange(len(self), self.k):
+                    self.padding += self.symbolsize
+                    self.append(zerocloner.clone())

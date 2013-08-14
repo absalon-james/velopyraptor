@@ -35,7 +35,7 @@ class SymbolSizeException(Exception):
 
 class Chunker(object):
     
-    def __init__(self, k, symbolsize):
+    def __init__(self, k, symbolsize, stream):
         """
         Constructor for initializing the base Chunker
 
@@ -47,6 +47,7 @@ class Chunker(object):
         self.k = k
         self.symbolsize = symbolsize
         self.blocksize = self.symbolsize * self.k
+        self.stream = stream
         
         # Check for 64 bit
         if config._64BIT:
@@ -62,8 +63,6 @@ class Chunker(object):
             self.bytes_per_int = 4
             self.dtype = "uint32"
 
-        self.ints_to_read = self.symbolsize / self.bytes_per_int
-
     def get_block_id(self):
         """
         Gets the current block id and increments to prepare for the next block.
@@ -73,54 +72,12 @@ class Chunker(object):
         self.block_id += 1
         return r
 
-    def __enter__(self):
-        """
-        For use within a with block
-        """
-        return self
-    
-    def __exit__(self, type, value, traceback):
-        """
-        Does nothing when exiting the with context
-        """
-        pass
-
-class FileChunker(Chunker):
-
-    def __init__(self, k, symbolsize, filename):
-        """
-        File chunker constructor
-
-        Arguments:
-        k           -- Integer number of symbols per block
-        symbol_size -- Integer Size of each symbol (IN BYTES)
-        filename    -- String name of file to chunk
-        """
-        super(FileChunker, self).__init__(k, symbolsize)
-        self.filename = filename
-        self.filesize = os.path.getsize(filename)
-
-        try:
-            self._f = io.open(filename, 'rb')
-        except Exception:
-            raise Exception('Unable to open file %s for reading.' % filename)
-
-    def __exit__(self, type, value, traceback):
-        """
-        Automatically attempts to close the file upon exiting the with context
-        """
-        self.close()
-
     def chunk(self):
         """
         Should return a block of strings
         Attempts to read k symbols from the file and pads a block
         so that the block is k symbols of symbolsize * 8 bits
         """
-        # Check to see file is still open
-        if self._f.closed:
-            return None
-        
         block = SourceBlock(self.k, self.symbolsize, self.get_block_id())
 
         j = 0
@@ -133,7 +90,6 @@ class FileChunker(Chunker):
                 j += 1
             else:
                 EOF = True
-                self.close()
 
         if len(block) == 0:
             return None
@@ -148,19 +104,49 @@ class FileChunker(Chunker):
         Returns a string otherwise
         """
 
-        s = self._f.read(self.symbolsize)
+        s = self.stream.read(self.symbolsize)
         if not len(s):
             return None
         return s
 
+    def __enter__(self):
+        """
+        For use within a with block
+        """
+        return self
+    
+    def __exit__(self, type, value, traceback):
+        """
+        Does nothing when exiting the with context
+        """
+        self.close()
+        pass
+
     def close(self):
         """
-        Attempts to close the file associated with this chunker
+        Attempts to close the stream associated with this chunker
         """
         try:
-            self._f.close()
+            self.stream.close()
         except:
             pass
+
+class FileChunker(Chunker):
+
+    def __init__(self, k, symbolsize, filename):
+        """
+        File chunker constructor
+
+        Arguments:
+        k           -- Integer number of symbols per block
+        symbol_size -- Integer Size of each symbol (IN BYTES)
+        filename    -- String name of file to chunk
+        """
+        try:
+            stream = io.open(filename, 'r+b')
+        except Exception:
+            raise Exception('Unable to open file %s for reading.' % filename)
+        super(FileChunker, self).__init__(k, symbolsize, stream)
 
 class StringChunker(Chunker):
     """
@@ -177,60 +163,5 @@ class StringChunker(Chunker):
         symbolsize -- Size of each symbol in a chunk]
         value -- String to chunk
         """
-        super(StringChunker, self).__init__(k, symbolsize)
-        self.value = value
-        self.bytesread = 0
-        self.stringsize = len(value)
-        self.stream = StringIO(value)
-
-    def __enter__(self):
-        return self 
-
-    def __exit__(self, type, value, traceback):
-        self.close()
-
-    def chunk(self):
-        """
-        Should return a block of strings
-        Attempts to read k symbols from the file and pads a block
-        so that the block is k symbols of symbolsize bytes
-        """
-
-        if self.bytesread >= self.stringsize:
-            return None
-
-        block = SourceBlock(self.k, self.symbolsize, self.get_block_id())
-
-        j = 0
-        while j < self.k and self.bytesread < self.stringsize:
-            b = self._read()
-            if not (b is None):
-                block.append(b)
-                j += 1
-            else:
-                break
-
-        if len(block) == 0:
-            return None
-
-        block.pad()
-        return block
-    
-    def _read(self):
-        """
-        Reads symbolsize bytes from the file
-        Returns None if the length is 0
-        Returns a string of length symbolsize unless there aren't enough bytes
-        to create a complete symbol
-        """
-
-        s = self.stream.read(self.symbolsize)
-        if not len(s):
-            return None
-        return s
-
-    def close(self):
-        try:
-            self.stream.close()
-        except:
-            pass
+        stream = StringIO(value)
+        super(StringChunker, self).__init__(k, symbolsize, stream)

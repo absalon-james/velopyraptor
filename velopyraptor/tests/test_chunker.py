@@ -11,6 +11,7 @@ from chunker import Chunker, SymbolSizeException
 
 DEFAULT_SYMBOLSIZE = 64
 DEFAULT_K = 10
+DEFAULT_STREAM = None
 
 class TestChunker(unittest.TestCase):
 
@@ -20,7 +21,7 @@ class TestChunker(unittest.TestCase):
         """
         expected_blocksize = DEFAULT_SYMBOLSIZE * DEFAULT_K
         expected_block_id = 0
-        c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE)
+        c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_STREAM)
 
         # Check k
         self.assertEqual(c.k, DEFAULT_K)
@@ -41,7 +42,7 @@ class TestChunker(unittest.TestCase):
         original = config._64BIT
         config._64BIT = True
         try:
-            c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE)
+            c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_STREAM)
             self.assertEqual(c.dtype, "uint64")
             self.assertEqual(c.bytes_per_int, 8)
         finally:
@@ -54,7 +55,7 @@ class TestChunker(unittest.TestCase):
         original = config._64BIT
         config._64BIT = False
         try:
-            c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE)
+            c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_STREAM)
             self.assertEqual(c.dtype, "uint32")
             self.assertEqual(c.bytes_per_int, 4)
         finally:
@@ -66,7 +67,7 @@ class TestChunker(unittest.TestCase):
         The first should be 0
         The second should be 0 + 1
         """
-        c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE)
+        c = Chunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_STREAM)
         expected_block_id = 0
 
         # Check that first blockid = 0
@@ -94,14 +95,14 @@ class TestChunker(unittest.TestCase):
 
             # Try a bad symbolsize.   
             with self.assertRaises(SymbolSizeException):
-                c = Chunker(10, 7)
+                c = Chunker(10, 7, DEFAULT_STREAM)
 
             try:
                 # Try a good symbol size (exactly 8 BYTES)
-                c = Chunker(10, 8)
+                c = Chunker(10, 8, DEFAULT_STREAM)
 
                 # Try a multiple of 8BYTES
-                c = Chunker(10, 24)
+                c = Chunker(10, 24, DEFAULT_STREAM)
             except Exception, e:
                 self.fail(e.tostring())
             
@@ -125,14 +126,14 @@ class TestChunker(unittest.TestCase):
             config._64BIT = False
             # Try a bad symbolsize.   
             with self.assertRaises(SymbolSizeException):
-                c = Chunker(10, 3)
+                c = Chunker(10, 3, DEFAULT_STREAM)
 
             try:
                 # Try a good symbol size (exactly 4 BYTES)
-                c = Chunker(10, 4)
+                c = Chunker(10, 4, DEFAULT_STREAM)
 
                 # Try a multiple of 4 BYTES
-                c = Chunker(10, 16)
+                c = Chunker(10, 16, DEFAULT_STREAM)
             except Exception, e:
                 self.fail(e.tostring())
             

@@ -12,7 +12,7 @@ from chunker import FileChunker
 
 DEFAULT_FILE = 'latin_text'
 DEFAULT_K = 4
-DEFAULT_SYMBOLSIZE = 1024 * 1024
+DEFAULT_SYMBOLSIZE = 1024 * 100
 
 class TestFileChunker(unittest.TestCase):
 
