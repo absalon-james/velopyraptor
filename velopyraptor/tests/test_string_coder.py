@@ -51,8 +51,9 @@ class TestStringEncoder(unittest.TestCase):
         coder = StringEncoder(DEFAULT_K, string)
         symbols = coder.symbolfy(string)
         self.assertTrue(len(symbols) == DEFAULT_K)
+        symbollen = len(symbols[0][1])
         for esi, symbol in symbols:
-            self.assertTrue(len(symbol) == 1)
+            self.assertTrue(len(symbol) == symbollen)
 
     def test_symbols(self):
         """
@@ -67,8 +68,7 @@ class TestStringEncoder(unittest.TestCase):
         reassembled = ""
 
         for esi, symbol in symbols:
-            part = symbol.tostring()
-            reassembled += part
+            reassembled += symbol
 
         if padding:
             reassembled = reassembled[:-padding]

@@ -1,6 +1,5 @@
 import config
 import hashlib
-import numpy
 from metadata import Metadata
 from raptor import RaptorR10
 
@@ -56,7 +55,7 @@ class StringEncoder(RaptorR10):
     def symbolfy(self, to_encode):
         """
         Turns to_encode into tuples consisting of
-        esi and numpy arrays
+        esi and string
         """
         to_encode = self.pad(to_encode)
         symbols = []
@@ -64,18 +63,17 @@ class StringEncoder(RaptorR10):
         step = length / self.k
         for i in xrange(self.k):
             part = to_encode[i * step: (i + 1) * step]
-            symbols.append((i, numpy.fromstring(part, dtype=config.dtype)))
+            symbols.append((i, part))
         return symbols
 
     def next(self):
         """
-        Converts parent's tuple (esi, numpy array) to 
+        Converts parent's tuple (esi, string) to 
         string prefixed by packed metadata
 
         Returns string
         """
         esi, symbol = super(StringEncoder, self).next()
-        symbol = symbol.tostring()
         digest = hashlib.md5(symbol).digest()
         meta = Metadata(esi, self.k, self.padding, digest)
         return "%s%s" % (str(meta), symbol)
@@ -115,7 +113,7 @@ class StringDecoder(RaptorR10):
 
         # Actually add symbols until decoding is possible
         for meta, symbol in symbols:
-            self.symbols.append((meta.esi, numpy.fromstring(symbol, dtype=config.dtype)))
+            self.symbols.append((meta.esi, symbol))
 
         if not self.can_decode():
             raise Exception("Unable to decode with the symbols provided.")
@@ -125,13 +123,13 @@ class StringDecoder(RaptorR10):
     
     def next(self):
         """
-        Converts parent's tuple (esi, numpy array) to 
+        Converts parent's tuple (esi, string) to 
         string
 
         Returns string
         """
         esi, symbol = super(StringDecoder, self).next()
-        return symbol.tostring()
+        return symbol
 
     def decode(self):
         """
