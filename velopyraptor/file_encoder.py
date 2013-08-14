@@ -45,7 +45,7 @@ class FileEncoder(object):
         self.input_file = input_file
         self.output_dir = output_dir
         self.stats = {
-            'chunking_time': 0,
+            'io_time': 0,
             'encoding_time': 0
         }
         self.optimal = optimal
@@ -115,13 +115,13 @@ class FileEncoder(object):
         self.start_timer()
 
         with FileChunker(self.k, self.s, self.input_file) as chunker:
-            self.add_time(self.stop_timer(), 'chunking_time')
+            self.add_time(self.stop_timer(), 'io_time')
             block_name = 0
 
             # Chunker returns none when we are out of blocks
             self.start_timer()
             block = chunker.chunk()
-            self.add_time(self.stop_timer(), 'chunking_time')
+            self.add_time(self.stop_timer(), 'io_time')
             while(block):
 
                 # Create the block directory
@@ -138,8 +138,6 @@ class FileEncoder(object):
 
                 # Write padding and k parameters that will be used
                 # to decode the block
-                # @TODO - Pack integers into bytes and write to binary file
-                #   Instead of text
                 f = open(os.path.join(dir_name, 'meta'), 'w')
                 f.write("%s:%s" % (block.k, block.padding))
                 f.close()
@@ -150,17 +148,21 @@ class FileEncoder(object):
                 # NOTE - We could start at k and produce k+m symbols there consisting
                 # entirely of parity blocks and be just as fine
                 for esi in xrange(self.k + self.m):
-                    # The encoder produces an (id, numpy array) tuple
+                    # The encoder produces an (id, string) tuple
                     self.start_timer()
                     esi, symbol = encoder.next()
                     self.add_time(self.stop_timer(), 'encoding_time')
-                    symbol.tofile(os.path.join(dir_name, str(esi)))
+
+                    self.start_timer()
+                    f = io.open(os.path.join(dir_name, str(esi)), "w+b")
+                    f.write(symbol)
                     f.close()
+                    self.add_time(self.stop_timer(), 'io_time')
 
                 block_name += 1
                 self.start_timer()
                 block = chunker.chunk()
-                self.add_time(self.stop_timer(), 'chunking_time')
+                self.add_time(self.stop_timer(), 'io_time')
 
         self.stats['blocksize'] = self.k * self.s
         self.stats['symbolsize'] = self.s
@@ -192,7 +194,7 @@ if __name__ == '__main__':
 
     print "Finished encoding %s into directory %s" % (args.file, args.directory)
     print "\nTotal Time: %s s" % (encoder.stats['end_time'] - encoder.stats['start_time'])
-    print "Chunking Time: %s s" % (encoder.stats['chunking_time'])
+    print "Chunking Time: %s s" % (encoder.stats['io_time'])
     print "Encoding Time: %s s" % (encoder.stats['encoding_time'])
 
     print "\nBlocksize: %s Bytes" % (encoder.stats['blocksize'])

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import io
-import numpy
 import os
 import time
 from decoder import Decoder
@@ -159,11 +158,13 @@ class FileDecoder(object):
                     # Open the share file in binary mode
                     self.start_timer()
 
-                    symbol = numpy.fromfile(os.path.join(blockdir, _file), dtype='uint64')
+                    f = io.open(os.path.join(blockdir, _file), "r+b")
+                    symbol = f.read()
+                    f.close()
                     self.add_time(self.stop_timer(), 'io_time')
 
                     # Add the symbol to the decoder.
-                    # A symbol is a (integer, numpy array) tuple
+                    # A symbol is a (integer, string) tuple
                     can_decode = decoder.append((int(_file), symbol))
                     read_symbols += 1
                     if can_decode:
@@ -189,7 +190,7 @@ class FileDecoder(object):
             # Steam source symbol output by encoding the first
             # k encoded symbols.
             # The first k source symbols == the first k encoding symbols
-            target = open(self.output_file, 'ab')
+            target = io.open(self.output_file, 'a+b')
             for i in xrange(k):
 
                 self.start_timer()
@@ -197,7 +198,7 @@ class FileDecoder(object):
                 self.add_time(self.stop_timer(), 'decoding_time')
 
                 self.start_timer()
-                s.tofile(target)
+                target.write(s)
                 self.add_time(self.stop_timer(), 'io_time')
             target.close()
         
