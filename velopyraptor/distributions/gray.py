@@ -17,6 +17,7 @@ limitations under the License.
 import math
 import operator
 
+
 def generate_grays_group_by_nbits(n):
     """
     Computes the gray sequence and groups elements by the number of bits they
@@ -32,7 +33,7 @@ def generate_grays_group_by_nbits(n):
         """
         s = 0
         mask = 1
-        for i in xrange(32):
+        for i in xrange(16):
             if (mask << i) & n:
                 s += 1
         return s
@@ -40,8 +41,8 @@ def generate_grays_group_by_nbits(n):
     # Function that xors a number by half of itself
     gray = lambda i: i ^ int(math.floor(i / 2.0))
 
-    # Create a list 
-    grouped_grays = [[] for i in xrange(64)]
+    # Create a list
+    grouped_grays = [[] for i in xrange(16 + 1)]
     for i in xrange(n):
         g = gray(i)
         bits = count_ones(g)
@@ -50,4 +51,4 @@ def generate_grays_group_by_nbits(n):
 
 # Create a sequence of grays grouped by the number of bits in each gray
 # The index in the the list indicates the number of bits
-SEQUENCE = generate_grays_group_by_nbits(8192)
+SEQUENCE = generate_grays_group_by_nbits(65536)

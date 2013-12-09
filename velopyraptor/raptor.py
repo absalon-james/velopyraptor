@@ -720,10 +720,10 @@ class RaptorR10(object):
         Arguments are capped to look similar to loops on rfc 5053 specs
         Arguments:
         k     -- Integer k
-        S     -- Integer S based upon k that satisifies precoding relationships
-        H     -- Integer H based upon k that satisifies precoding relationships
-        H_HALF -- Integer H_HALF(should be rea din rfc 5053 as H') that
-            satisifies precoding relationships
+        S     -- Integer S based upon k that satisfies precoding relationships
+        H     -- Integer H based upon k that satisfies precoding relationships
+        H_HALF -- Integer H_HALF(should be read in rfc 5053 as H') that
+            satisfies precoding relationships
 
         Returns a list of bitarrays representing G_HDPC
         """
