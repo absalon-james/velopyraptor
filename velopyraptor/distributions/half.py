@@ -61,6 +61,6 @@ def next(n):
     n -- Integer to search
     """
     for i in xrange(1, len(HALVES)):
-        if HALVES[i] > n:
+        if HALVES[i] >= n:
             return i
     return None

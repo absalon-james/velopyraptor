@@ -10,6 +10,7 @@ from distributions.half import choose
 from decoder import Decoder
 from raptor import RaptorR10ParameterException
 
+
 class TestK(unittest.TestCase):
 
     def test_less_than_min_k(self):
@@ -43,13 +44,13 @@ class TestK(unittest.TestCase):
             d = Decoder(8192)
         except RaptorR10ParameterException:
             self.fail("Using k = 8192 fails")
-            
+
     def test_all_k(self):
         """
         Tests all valid values of k
         """
         try:
-            for i in xrange(4, 8192):
+            for i in xrange(4, 8193):
                 d = Decoder(i)
 
                 # Check that x is >= 2k
@@ -59,7 +60,8 @@ class TestK(unittest.TestCase):
                 self.assertTrue(d.s >= (math.ceil(0.01 * d.k) + d.x))
 
                 # Check that H choose H / 2 >= K + S
-                self.assertTrue(choose(d.h, int(math.ceil(d.h / 2.00))) >= d.k + d.s)
+                H = choose(d.h, int(math.ceil(d.h / 2.00)))
+                self.assertTrue(H >= d.k + d.s)
 
                 # Check that H' = ceil(H/2)
                 self.assertTrue(d.h_prime == math.ceil(d.h / 2.00))

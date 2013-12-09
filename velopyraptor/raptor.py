@@ -38,6 +38,7 @@ if config._64BIT:
 else:
     DTYPE = 'uint32'
 
+
 class RaptorR10ParameterException(Exception):
 
     """
@@ -52,6 +53,7 @@ class RaptorR10ParameterException(Exception):
         message -- String message
         """
         super(RaptorR10ParameterException, self).__init__(message)
+
 
 class RaptorR10DecodingScheduleException(Exception):
     """
@@ -70,6 +72,7 @@ class RaptorR10DecodingScheduleException(Exception):
         super(RaptorR10DecodingScheduleException, self).__init__(
             "%s: %s" % (generic, specific)
         )
+
 
 class RaptorR10(object):
 
@@ -148,7 +151,7 @@ class RaptorR10(object):
                     MAX_K
                 )
             )
-             
+
         # Let X be the smallest positive integer such that X*(X-1) >= 2*K.
         # a = 1, b =-1 c = -2(k)
         # quadratic = ((b * -1) + math.sqrt((b * b) - (4 * a * c))) / (2 * a)
@@ -246,7 +249,7 @@ class RaptorR10(object):
 
         Returns a numpy array
         """
-        
+
         d, a, b = self.triple(id)
         while b >= self.l:
             b = (b + a) % self.l_prime
@@ -343,11 +346,11 @@ class RaptorR10(object):
             # let r be the number of ones in a row in v
             r = v_row.count()
 
-            # Ignore rows 
+            # Ignore rows
             if r == 0:
                 continue
 
-            if min_r is None or r < min_r :
+            if min_r is None or r < min_r:
                 min_r = r
                 rows_with_min_r = [row_index]
             elif r == min_r:
@@ -427,7 +430,8 @@ class RaptorR10(object):
             # place remaining ones in right side of v by reordering columns
             # locate 1s
             ones = set()
-            [ones.add(column) for column in xrange(i, self.l - u) if a[i][column]]
+            [ones.add(column)
+                for column in xrange(i, self.l - u) if a[i][column]]
 
             # Exchange column i with first one column
             if not a[i][i]:
@@ -452,9 +456,9 @@ class RaptorR10(object):
             i += 1
             u += r - 1
 
-        # matrix u is divided into the first i rows u_upper and m-i rows u_lower
-        # perform gaussian elimination on u_lower so that the first u rows are
-        # a u identity matrix
+        # Matrix u is divided into the first i rows u_upper and m-i rows
+        # u_lower. Perform gaussian elimination on u_lower so that the first u
+        # rows are a u x u identity matrix
         for column in xrange(self.l - u, self.l):
             if not a[column][column]:
                 # find a row to swap
@@ -578,7 +582,7 @@ class RaptorR10(object):
         Determines whether or not decoding can take place
 
         Returns true for success, false otherwise
-        """        
+        """
         try:
             a = self.a()
             self.decoding_schedule(a)
@@ -615,7 +619,7 @@ class RaptorR10(object):
                 # Check requirements prior to proceeding with XOR
                 if new_row.count() + 2 < count:
                     cls.xor_row(a, j, i, schedule)
- 
+
     @classmethod
     def xor_row(cls, a, r1, r2, schedule):
 
@@ -645,7 +649,7 @@ class RaptorR10(object):
         a -- List of bit arrays representing a
         c1 -- Integer first column id
         c2 -- Integer second column id
-        schedule -- Schedule of operations performed upon a        
+        schedule -- Schedule of operations performed upon a
         """
         # Exchange the columns c1 and c2 in a
         for i in xrange(len(a)):
@@ -701,7 +705,7 @@ class RaptorR10(object):
 
         for i in xrange(k):
             a = int(1 + (math.floor(i / float(s)) % (s - 1)))
-            b =  i % s
+            b = i % s
             matrix[b][i] = True
             b = (b + a) % s
             matrix[b][i] = True
@@ -780,4 +784,3 @@ class RaptorR10(object):
             if i == 5000:
                 i = 0
                 xors += 1
-
