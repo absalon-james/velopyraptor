@@ -1,4 +1,3 @@
-import math
 import os
 import sys
 import unittest
@@ -9,6 +8,7 @@ from bitarray import bitarray
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import matrix
+
 
 class TestMatrix(unittest.TestCase):
 
@@ -41,7 +41,7 @@ class TestMatrix(unittest.TestCase):
 
             # Make sure each bit in row row is 0(False)
             for i in xrange(columns):
-                self.assertTrue(m[row][i] == False)
+                self.assertTrue(m[row][i] is False)
 
     def test_identity(self):
         """
@@ -59,7 +59,7 @@ class TestMatrix(unittest.TestCase):
             self.assertTrue(len(m[row]) == rows_and_columns)
 
             # Make sure the row'th column in row row is a 1
-            self.assertTrue(m[row][row] == True)
+            self.assertTrue(m[row][row] is True)
 
             # Make sure that each row has exactly 1 one 1
             self.assertTrue(m[row].count() == 1)
@@ -75,7 +75,7 @@ class TestMatrix(unittest.TestCase):
             m.append(bitarray(columns))
 
         with self.assertRaises(Exception):
-            m_inverse = matrix.inverse(m)
+            matrix.inverse(m)
 
     def test_inverse_2x2(self):
         """
@@ -110,7 +110,7 @@ class TestMatrix(unittest.TestCase):
 
         # Attempt to multiply 4x5 by 4x5 (should fail)
         with self.assertRaises(Exception):
-            c = matrix.multiply(a, b)
+            matrix.multiply(a, b)
 
     def test_good_dimensions(self):
         """
@@ -161,7 +161,7 @@ class TestMatrix(unittest.TestCase):
         that are identical have a rank of 1
         """
         m = [bitarray("10"), bitarray("10")]
-        rank = matrix.rank(m)
+        matrix.rank(m)
         self.assertTrue(matrix.rank(m) == 1)
 
     def test_rank_5x5_partial_identity(self):

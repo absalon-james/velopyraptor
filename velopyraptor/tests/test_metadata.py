@@ -15,6 +15,7 @@ K = 10
 PADDING = 20
 DIGEST = md5(HASH_STRING).digest()
 
+
 class TestMetadata(unittest.TestCase):
     """
     Collection of tests for the metadata module
@@ -31,7 +32,7 @@ class TestMetadata(unittest.TestCase):
         self.assertTrue(meta.k == K)
         self.assertTrue(meta.padding == PADDING)
         self.assertTrue(meta.hash == DIGEST)
-        
+
     def test_esi_range(self):
         """
         Tests the number ranges for the esi field

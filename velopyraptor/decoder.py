@@ -15,6 +15,7 @@ limitations under the License.
 """
 from raptor import RaptorR10
 
+
 class Decoder(RaptorR10):
     """
     Instances of this class take a known set of encoding symbols

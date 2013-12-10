@@ -7,12 +7,12 @@ import unittest
 # Parent holds the encoding/decoding python files
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import config
 from chunker import StringChunker
 
 DEFAULT_FILE = 'latin_text'
 DEFAULT_K = 4
 DEFAULT_SYMBOLSIZE = 1024 * 1024
+
 
 class TestChunker(unittest.TestCase):
 
@@ -65,8 +65,6 @@ class TestChunker(unittest.TestCase):
             symbol_length_in_uints = DEFAULT_SYMBOLSIZE / chunker.bytes_per_int
             while(chunk):
                 self.assertTrue(len(chunk) == DEFAULT_K)
-
-                # Check each symbol to ensure it is symbolsize / bytes per int uints long
                 for s in chunk:
                     self.assertTrue(len(s) == symbol_length_in_uints)
                 chunk = chunker.chunk()

@@ -1,4 +1,3 @@
-import math
 import os
 import sys
 import unittest
@@ -11,6 +10,7 @@ from chunker import Chunker, SymbolSizeException
 
 DEFAULT_SYMBOLSIZE = 64
 DEFAULT_K = 10
+
 
 class TestChunker(unittest.TestCase):
 
@@ -75,8 +75,7 @@ class TestChunker(unittest.TestCase):
         # Check that the next block id = 1
         expected_block_id = 1
         self.assertEqual(c.get_block_id(), expected_block_id)
-        
-    
+
     def test_64bit_symbolsize(self):
 
         """
@@ -92,19 +91,19 @@ class TestChunker(unittest.TestCase):
         try:
             config._64BIT = True
 
-            # Try a bad symbolsize.   
+            # Try a bad symbolsize.
             with self.assertRaises(SymbolSizeException):
-                c = Chunker(10, 7)
+                Chunker(10, 7)
 
             try:
                 # Try a good symbol size (exactly 8 BYTES)
-                c = Chunker(10, 8)
+                Chunker(10, 8)
 
                 # Try a multiple of 8BYTES
-                c = Chunker(10, 24)
+                Chunker(10, 24)
             except Exception, e:
                 self.fail(e.tostring())
-            
+
         finally:
             # Restore original
             config._64BIT = original
@@ -123,19 +122,19 @@ class TestChunker(unittest.TestCase):
 
         try:
             config._64BIT = False
-            # Try a bad symbolsize.   
+            # Try a bad symbolsize.
             with self.assertRaises(SymbolSizeException):
-                c = Chunker(10, 3)
+                Chunker(10, 3)
 
             try:
                 # Try a good symbol size (exactly 4 BYTES)
-                c = Chunker(10, 4)
+                Chunker(10, 4)
 
                 # Try a multiple of 4 BYTES
-                c = Chunker(10, 16)
+                Chunker(10, 16)
             except Exception, e:
                 self.fail(e.tostring())
-            
+
         finally:
             # Restore original
             config._64BIT = original

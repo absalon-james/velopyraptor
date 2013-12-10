@@ -4,8 +4,8 @@ import numpy
 from metadata import Metadata
 from raptor import RaptorR10
 
-class StringEncoder(RaptorR10):
 
+class StringEncoder(RaptorR10):
     """
     Used to encode a single string without chunking by breaking it
     into k source parts and calculating intermediate symbols from it
@@ -17,12 +17,10 @@ class StringEncoder(RaptorR10):
         k -- Integer number of source symbols
         to_encode -- String to encode
         """
-
         super(StringEncoder, self).__init__(k, **kwargs)
         self.padding = 0
         self.symbols = self.symbolfy(to_encode)
         self.calculate_i_symbols()
-
 
     def pad(self, to_encode):
         """
@@ -69,7 +67,7 @@ class StringEncoder(RaptorR10):
 
     def next(self):
         """
-        Converts parent's tuple (esi, numpy array) to 
+        Converts parent's tuple (esi, numpy array) to
         string prefixed by packed metadata
 
         Returns string
@@ -79,6 +77,7 @@ class StringEncoder(RaptorR10):
         digest = hashlib.md5(symbol).digest()
         meta = Metadata(esi, self.k, self.padding, digest)
         return "%s%s" % (str(meta), symbol)
+
 
 class StringDecoder(RaptorR10):
     """
@@ -100,7 +99,7 @@ class StringDecoder(RaptorR10):
 
         if not len(symbols):
             raise Exception("No symbols were provided to decode")
-        
+
         # Make sure we have padding and k agreement between all symbols
         self.k = symbols[0][0].k
         self.padding = symbols[0][0].padding
@@ -108,24 +107,27 @@ class StringDecoder(RaptorR10):
             if not (meta.k == self.k):
                 raise Exception("Provided symbols do not have k agreement")
             if not (meta.padding == self.padding):
-                raise Exception("Provided symbols do not have padding agreement")
+                raise Exception("Provided symbols do not "
+                                "have padding agreement")
 
         # Invoke parent's init to set up raptor coding parameters
         super(StringDecoder, self).__init__(self.k)
 
         # Actually add symbols until decoding is possible
         for meta, symbol in symbols:
-            self.symbols.append((meta.esi, numpy.fromstring(symbol, dtype=config.dtype)))
+            self.symbols.append((meta.esi,
+                                 numpy.fromstring(symbol,
+                                                  dtype=config.dtype)))
 
         if not self.can_decode():
             raise Exception("Unable to decode with the symbols provided.")
 
         # Calculate i symbols
         self.calculate_i_symbols()
-    
+
     def next(self):
         """
-        Converts parent's tuple (esi, numpy array) to 
+        Converts parent's tuple (esi, numpy array) to
         string
 
         Returns string

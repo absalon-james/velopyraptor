@@ -18,10 +18,10 @@ import os
 import config
 from block import Source as SourceBlock
 
+
 class SymbolSizeException(Exception):
 
     def __init__(self, bits, _bytes):
-    
         """
         Exception for when symbolsizes are not suitable for architecture
 
@@ -29,11 +29,12 @@ class SymbolSizeException(Exception):
         bits -- Integer number of bits in a register (Usually 32, 64)
         _bytes -- Number of bytes per register (64bit is 8 bytes and so forth)
         """
-        message = "Symbol size must be a multiple of %s bytes for %s bit systems." % (_bytes, bits)
+        message = "Symbol size must be a multiple of %s" \
+                  "bytes for %s bit systems." % (_bytes, bits)
         super(SymbolSizeException, self).__init__(message)
 
+
 class Chunker(object):
-    
     def __init__(self, k, symbolsize):
         """
         Constructor for initializing the base Chunker
@@ -46,7 +47,7 @@ class Chunker(object):
         self.k = k
         self.symbolsize = symbolsize
         self.blocksize = self.symbolsize * self.k
-        
+
         # Check for 64 bit
         if config._64BIT:
             if not (self.symbolsize % 8 == 0):
@@ -77,12 +78,13 @@ class Chunker(object):
         For use within a with block
         """
         return self
-    
+
     def __exit__(self, type, value, traceback):
         """
         Does nothing when exiting the with context
         """
         pass
+
 
 class FileChunker(Chunker):
 
@@ -119,7 +121,7 @@ class FileChunker(Chunker):
         # Check to see file is still open
         if self._f.closed:
             return None
-        
+
         block = SourceBlock(self.k, self.symbolsize, self.get_block_id())
 
         j = 0
@@ -152,7 +154,8 @@ class FileChunker(Chunker):
 
         # Read a complete symbol of uints
         if difference > self.symbolsize:
-            return numpy.fromfile(self._f, dtype=self.dtype, count=self.ints_to_read)
+            return numpy.fromfile(self._f,
+                                  dtype=self.dtype, count=self.ints_to_read)
 
         # Read the remainder
         elif difference > 0:
@@ -168,6 +171,7 @@ class FileChunker(Chunker):
             self._f.close()
         except:
             pass
+
 
 class StringChunker(Chunker):
     """
@@ -214,7 +218,7 @@ class StringChunker(Chunker):
 
         block.pad()
         return block
-    
+
     def _read(self):
         """
         Reads symbolsize bytes from the file
@@ -228,8 +232,12 @@ class StringChunker(Chunker):
 
         # Read a complete symbol of uints
         if difference > self.symbolsize:
-            _slice = self.value[self.bytesread:self.bytesread + self.symbolsize]
-            array = numpy.fromstring(_slice, dtype=self.dtype, count=self.ints_to_read)
+            start = self.bytesread
+            end = self.bytesread + self.symbolsize
+            _slice = self.value[start:end]
+            array = numpy.fromstring(_slice,
+                                     dtype=self.dtype,
+                                     count=self.ints_to_read)
             self.bytesread += len(_slice)
             return array
 

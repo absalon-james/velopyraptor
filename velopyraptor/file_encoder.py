@@ -15,10 +15,10 @@ limitations under the License.
 """
 
 import os
-import io
 import time
 from encoder import Encoder
 from chunker import FileChunker
+
 
 class FileEncoder(object):
 
@@ -40,7 +40,7 @@ class FileEncoder(object):
         output_dir -- Directory to place encoded blocks and shares
         """
         self.k = k
-        self.s = s # Bytes
+        self.s = s  # Bytes
         self.m = m
         self.input_file = input_file
         self.output_dir = output_dir
@@ -77,7 +77,7 @@ class FileEncoder(object):
         delta -- Float number of seconds between two times
         field -- String field to add the delta to
         """
-        self.stats[field] += delta 
+        self.stats[field] += delta
 
     def exit(self, message):
         """
@@ -133,7 +133,8 @@ class FileEncoder(object):
                 source_symbols = [(id, block[id]) for id in xrange(self.k)]
 
                 self.start_timer()
-                encoder = Encoder(self.k, source_symbols, use_optimal_esis=self.optimal)
+                encoder = Encoder(self.k, source_symbols,
+                                  use_optimal_esis=self.optimal)
                 self.add_time(self.stop_timer(), 'encoding_time')
 
                 # Write padding and k parameters that will be used
@@ -145,9 +146,10 @@ class FileEncoder(object):
                 f.close()
 
                 # Iterate over the encoder and produce the first k + m symbols
-                # In this instance the first k symbols will match the source symbols
+                # In this instance the first k symbols will match the source
+                # symbols
                 # m is the number of parity blocks
-                # NOTE - We could start at k and produce k+m symbols there consisting
+                # NOTE - We could start at k and produce k+m symbols consisting
                 # entirely of parity blocks and be just as fine
                 for esi in xrange(self.k + self.m):
                     # The encoder produces an (id, numpy array) tuple
@@ -181,17 +183,24 @@ if __name__ == '__main__':
         help="Output directory to contain encoded shares"
     )
 
-    parser.add_argument("--k", default=10, type=int, help="Number of nodes to split encoding.(default 10)")
-    parser.add_argument('--m', default=4, type=int, help="Number of parity blocks to compute.(default 4)")
-    parser.add_argument('--s', default=(1 * 1024 * 1024), type=int, help="Symbol size in bytes(default 1 * 1024 * 1024)")
-    parser.add_argument('-o', '--o', default=False, action="store_true", help="Use optimal symbols when encoding.")
+    parser.add_argument("--k", default=10, type=int,
+                        help="Number of nodes to split encoding.(default 10)")
+    parser.add_argument('--m', default=4, type=int,
+                        help="Number of parity blocks to compute.(default 4)")
+    parser.add_argument('--s', default=(1 * 1024 * 1024), type=int,
+                        help="Symbol size in bytes(default 1 * 1024 * 1024)")
+    parser.add_argument('-o', '--o', default=False, action="store_true",
+                        help="Use optimal symbols when encoding.")
 
     args = parser.parse_args()
-    encoder = FileEncoder(args.k, args.s, args.m, args.file, args.directory, optimal=args.o)
+    encoder = FileEncoder(args.k, args.s, args.m, args.file,
+                          args.directory, optimal=args.o)
     encoder.encode()
 
-    print "Finished encoding %s into directory %s" % (args.file, args.directory)
-    print "\nTotal Time: %s s" % (encoder.stats['end_time'] - encoder.stats['start_time'])
+    print "Finished encoding %s into directory %s" \
+        % (args.file, args.directory)
+    print "\nTotal Time: %s s" \
+        % (encoder.stats['end_time'] - encoder.stats['start_time'])
     print "Chunking Time: %s s" % (encoder.stats['chunking_time'])
     print "Encoding Time: %s s" % (encoder.stats['encoding_time'])
 

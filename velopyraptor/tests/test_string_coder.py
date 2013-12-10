@@ -13,6 +13,7 @@ from string_coder import StringEncoder, StringDecoder
 
 DEFAULT_K = 10
 
+
 class TestStringEncoder(unittest.TestCase):
 
     def test_padding_0_length(self):
@@ -43,7 +44,7 @@ class TestStringEncoder(unittest.TestCase):
 
     def test_k_symbols(self):
         """
-        Tests that symbolfy produces k symbols and that all 
+        Tests that symbolfy produces k symbols and that all
         k symbols are the same length
         """
         length = DEFAULT_K * config.alignment
@@ -85,6 +86,7 @@ class TestStringEncoder(unittest.TestCase):
         for i in xrange(2 * DEFAULT_K):
             self.assertTrue(str == type(coder.next()))
 
+
 class TestStringDecoder(unittest.TestCase):
 
     def get_random_symbols(self, size, padding):
@@ -101,10 +103,12 @@ class TestStringDecoder(unittest.TestCase):
         symbols = []
         for i in xrange(DEFAULT_K):
             string = os.urandom(size)
-            meta = Metadata(i, DEFAULT_K, padding, hashlib.md5(string).digest())
+            meta = Metadata(i,
+                            DEFAULT_K,
+                            padding, hashlib.md5(string).digest())
             symbols.append("%s%s" % (str(meta), string))
         return symbols
-        
+
     def test_meta_init(self):
         """
         Tests that ther coder chooses the same k and padding
@@ -129,7 +133,7 @@ class TestStringDecoder(unittest.TestCase):
         meta.k = DEFAULT_K + 1
         symbols[0] = "%s%s" % (str(meta), symbol)
         with self.assertRaises(Exception):
-            coder = StringDecoder(symbols)
+            StringDecoder(symbols)
 
     def test_bad_padding(self):
         """
@@ -142,7 +146,7 @@ class TestStringDecoder(unittest.TestCase):
         meta.padding = padding + 1
         symbols[0] = "%s%s" % (str(meta), symbol)
         with self.assertRaises(Exception):
-            coder = StringDecoder(symbols)
+            StringDecoder(symbols)
 
     def test_no_symbols(self):
         """
@@ -150,7 +154,7 @@ class TestStringDecoder(unittest.TestCase):
         """
         symbols = []
         with self.assertRaises(Exception):
-            coder = StringDecoder(Symbols)
+            StringDecoder(symbols)
 
     def test_linearly_dependent_symbols(self):
         """
@@ -162,7 +166,7 @@ class TestStringDecoder(unittest.TestCase):
         symbols = self.get_random_symbols(size, padding)
         symbols[0] = copy.deepcopy(symbols[1])
         with self.assertRaises(Exception):
-            coder = StringDecoder(symbols)
+            StringDecoder(symbols)
 
     def test_decoding(self):
         """

@@ -18,15 +18,15 @@ class TestK(unittest.TestCase):
         Makes sure trying to use a k < 4 fails
         """
         with self.assertRaises(RaptorR10ParameterException):
-            d = Decoder(3)
+            Decoder(3)
 
     def test_min_k(self):
         """
         Makes sure using the minimum k works
         """
         try:
-            d = Decoder(4)
-        except RaptorR10ParamterException:
+            Decoder(4)
+        except RaptorR10ParameterException:
             self.fail("Using k = 4 failed")
 
     def test_more_than_max_k(self):
@@ -34,14 +34,14 @@ class TestK(unittest.TestCase):
         Makes sure trying to use a k > 8192 fails
         """
         with self.assertRaises(RaptorR10ParameterException):
-            d = Decoder(8193)
+            Decoder(8193)
 
     def test_max_k(self):
         """
         Makes sure k at max works
         """
         try:
-            d = Decoder(8192)
+            Decoder(8192)
         except RaptorR10ParameterException:
             self.fail("Using k = 8192 fails")
 

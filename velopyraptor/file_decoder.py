@@ -19,8 +19,8 @@ import os
 import time
 from decoder import Decoder
 
-class FileDecoder(object):
 
+class FileDecoder(object):
     """
     Decodes a RaptorR10 encoded directory into
     the original file
@@ -113,7 +113,6 @@ class FileDecoder(object):
             return (int(k), int(padding))
         except:
             self.exit("Unable to read block metadata for block %s." % metafile)
-            
 
     def decode(self):
         """
@@ -145,21 +144,16 @@ class FileDecoder(object):
             read_symbols = 0
 
             for _file in os.listdir(blockdir):
-                
                 # Skip non files
                 if not os.path.isfile(os.path.join(blockdir, _file)):
                     continue
 
                 try:
-                    # A share should be a named integer indicating which symbol it
-                    # is.  int(_file) will raise an error if not and we ignore
-                    # that file
-                    id = int(_file)
-
                     # Open the share file in binary mode
                     self.start_timer()
 
-                    symbol = numpy.fromfile(os.path.join(blockdir, _file), dtype='uint64')
+                    symbol = numpy.fromfile(os.path.join(blockdir, _file),
+                                            dtype='uint64')
                     self.add_time(self.stop_timer(), 'io_time')
 
                     # Add the symbol to the decoder.
@@ -168,17 +162,19 @@ class FileDecoder(object):
                     read_symbols += 1
                     if can_decode:
                         break
-                except Exception, e:
+                except Exception:
                     continue
                     pass
 
             # Ideally we want more than k encoded symbols.
             # We will fail with less than k
             if read_symbols < k:
-                self.exit("There were not sufficient symbols to recover block %s" % block)
+                self.exit("There were not sufficient symbols"
+                          " to recover block %s" % block)
 
             if not can_decode:
-                self.exit("A decoding schedule was not possible with the symbols provided.")
+                self.exit("A decoding schedule was not possible "
+                          "with the symbols provided.")
 
             # Instruct decoder to calculate intermediate symbols from
             # known encoding symbols
@@ -200,7 +196,7 @@ class FileDecoder(object):
                 s.tofile(target)
                 self.add_time(self.stop_timer(), 'io_time')
             target.close()
-        
+
             # Padding should only be on the last block but we check anyway
             # @TODO - Ensure file size is accurate before truncating
             if (padding):
@@ -210,25 +206,29 @@ class FileDecoder(object):
                 target.truncate(size)
                 target.close()
                 self.add_time(self.stop_timer(), 'io_time')
-    
+
             # Increment block number by 1
             block += 1
             blockdir = os.path.join(self.input_dir, str(block))
 
         self.stats['blocks_decoded'] = block
         self.stats['end_time'] = time.time()
-        self.stats['elapsed_time'] = self.stats['end_time'] - self.stats['start_time']
+        self.stats['elapsed_time'] = \
+            self.stats['end_time'] - self.stats['start_time']
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(prog="python file_decoder.py", description="Erasure decoding using Raptor R10")
+    description = "Erasure decoding using Raptor R10"
+    parser = argparse.ArgumentParser(prog="python file_decoder.py",
+                                     description=description)
     parser.add_argument('directory', help="Directory to decode")
     parser.add_argument('file', help="Output file")
     args = parser.parse_args()
     decoder = FileDecoder(args.directory, args.file)
     decoder.decode()
 
-    print "Finished decoding directory %s into %s" % (args.directory, args.file)
+    print "Finished decoding directory %s into %s" % \
+        (args.directory, args.file)
     print "Elapsed time: %s seconds" % (decoder.stats['elapsed_time'])
     print "Io time: %s seconds" % (decoder.stats['io_time'])
     print "Decoding time: %s seconds" % (decoder.stats['decoding_time'])

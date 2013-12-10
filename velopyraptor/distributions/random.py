@@ -117,9 +117,12 @@ V1_R10 = [
     3545931032, 2102949142, 2828208598, 3603378023, 4135048896
 ]
 
+
 def R10(X, i, m):
     """
     Generates a pseudo random number for the R10 encoding.
     This generator is specified in rfc 5053
     """
-    return operator.xor(V0_R10[int((X + i) % 256)], V1_R10[int((math.floor(X/256) + i) % 256)]) % m
+    v0 = V0_R10[int((X + i) % 256)]
+    v1 = V1_R10[int((math.floor(X/256) + i) % 256)]
+    return operator.xor(v0, v1) % m

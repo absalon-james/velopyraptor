@@ -21,12 +21,13 @@ it makes sense to use bitarrays which fit 8 booleans into one byte.
 import copy
 from bitarray import bitarray
 
+
 def zeros(n, m):
     """
-    Creates a zero n by m matrix    
+    Creates a zero n by m matrix
     Arguments:
     n -- Integer number of rows
-    m -- Integer number of columns 
+    m -- Integer number of columns
     """
     matrix = []
     for i in xrange(n):
@@ -34,6 +35,7 @@ def zeros(n, m):
         ba.setall(False)
         matrix.append(ba)
     return matrix
+
 
 def identity(n):
     """
@@ -49,6 +51,7 @@ def identity(n):
         ba[i] = True
         matrix.append(ba)
     return matrix
+
 
 def inverse(a):
     """
@@ -66,7 +69,8 @@ def inverse(a):
     # Check dimensions.  Matrix must be square
     size = len(a)
     if not (size == len(a[0])):
-        raise Exception("Tried to invert a %s by %s matrix. Matrix must be square" % (size, len(a[0])))
+        raise Exception("Tried to invert a %s by %s matrix. "
+                        "Matrix must be square" % (size, len(a[0])))
 
     # We dont want to change a
     a = copy.deepcopy(a)
@@ -97,7 +101,9 @@ def inverse(a):
     # We should have 1s for the diagonal and all 0s
     for i in xrange(size):
         if not a[i][i]:
-            raise Exception("Tried to invert invertible matrix.  Matrix does not have ones in diagonal in upper triangular form")
+            raise Exception("Tried to invert invertible matrix. Matrix does "
+                            "not have ones in diagonal in upper triangular "
+                            "form")
 
     # start at bottom right and XOR rows to rows above
     # to get rid of 1's
@@ -110,6 +116,7 @@ def inverse(a):
     for i in xrange(size):
         a[i] = a[i][size:]
     return a
+
 
 def multiply(a, b):
     """
@@ -125,7 +132,8 @@ def multiply(a, b):
     n = len(a[0])
     y = len(b[0])
     if not (n == len(b)):
-        raise Exception("Attempted to multiply %s by %s matrix a by %s by %s matrix b" % (x, n, len(b), y))
+        raise Exception("Attempted to multiply %s by %s matrix a by %s by %s "
+                        "matrix b" % (x, n, len(b), y))
 
     # Init matrix
     matrix = []
@@ -138,6 +146,7 @@ def multiply(a, b):
                 row[j] ^= a[i][k] & b[k][j]
         matrix.append(row)
     return matrix
+
 
 def rank(a):
     """

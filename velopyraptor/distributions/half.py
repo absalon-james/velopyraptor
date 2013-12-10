@@ -16,6 +16,7 @@ limitations under the License.
 
 import math
 
+
 def choose(n, r):
     """
     Quick and dirty nCr
@@ -31,6 +32,7 @@ def choose(n, r):
     numerator = reduce(reducer, xrange(r + 1, n + 1), 1)
     denominator = reduce(reducer, xrange(1, n - r + 1), 1)
     return numerator / denominator
+
 
 def generate_halves(cap):
     """
@@ -52,6 +54,7 @@ def generate_halves(cap):
 # so that they do not have to be computed every time this module
 # is fresh imported
 HALVES = generate_halves(300)
+
 
 def next(n):
     """

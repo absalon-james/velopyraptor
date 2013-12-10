@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import copy
 import math
 import matrix
 import networkx
@@ -368,7 +367,7 @@ class RaptorR10(object):
         """
 
         if len(self.symbols) < self.k:
-            raise RaptorR10DecodingScheduleExceptionException(
+            raise RaptorR10DecodingScheduleException(
                 "Need at least %s symbols decode but only have %s." %
                 (self.k, len(self.symbols))
             )

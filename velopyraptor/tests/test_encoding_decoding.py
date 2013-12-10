@@ -1,5 +1,4 @@
 import hashlib
-import math
 import io
 import os
 import sys
@@ -14,6 +13,7 @@ from decoder import Decoder
 
 DEFAULT_FILE = 'latin_text'
 SYMBOLSIZE = 1024 * 100
+
 
 class TestEncodingDecoding(unittest.TestCase):
 
@@ -62,7 +62,6 @@ class TestEncodingDecoding(unittest.TestCase):
         md5 = hashlib.md5()
 
         with FileChunker(k, SYMBOLSIZE, DEFAULT_FILE) as chunker:
-        
             chunk = chunker.chunk()
             while chunk:
                 padding = chunk.padding
@@ -94,7 +93,6 @@ class TestEncodingDecoding(unittest.TestCase):
                     decoded = decoded[:padding]
 
                 md5.update(decoded)
-            
                 # Continue on to the next chunk
                 chunk = chunker.chunk()
 

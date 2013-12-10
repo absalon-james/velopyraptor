@@ -15,7 +15,6 @@ limitations under the License.
 """
 
 import math
-import operator
 
 
 def generate_grays_group_by_nbits(n):

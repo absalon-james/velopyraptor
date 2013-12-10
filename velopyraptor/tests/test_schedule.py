@@ -1,4 +1,3 @@
-import math
 import os
 import sys
 import unittest
@@ -7,6 +6,7 @@ import unittest
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from schedule import Schedule
+
 
 class TestSchedule(unittest.TestCase):
 
@@ -27,9 +27,7 @@ class TestSchedule(unittest.TestCase):
         self.assertTrue(0 == len(s.xors))
 
     def test_exhange_row(self):
-        """
-        Tests the exchanging of rows in the schedule
-        """
+        """Tests the exchanging of rows in the schedule"""
         t = 10
         s = Schedule(t, t)
         self.assertTrue(s.d[0] == 0)
@@ -40,9 +38,7 @@ class TestSchedule(unittest.TestCase):
         self.assertTrue(s.d[1] == 0)
 
     def test_exchange_column(self):
-        """
-        Tests the exchanging of columns in the schedule
-        """        
+        """Tests the exchanging of columns in the schedule"""
         t = 10
         s = Schedule(t, t)
         self.assertTrue(s.c[0] == 0)

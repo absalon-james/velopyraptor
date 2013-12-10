@@ -16,6 +16,7 @@ limitations under the License.
 import numpy
 import config
 
+
 class Source(list):
 
     """
@@ -26,7 +27,7 @@ class Source(list):
     def __init__(self, k, symbolsize, block_id):
         """
         Block constructor
-        
+
         Arguments:
         k          -- number of symbols
         symbolsize -- Size of each symbol in bytes
@@ -35,7 +36,8 @@ class Source(list):
         self.k = k
         self.symbolsize = symbolsize
         self.id = block_id
-        self.padding = 0 # Bytes
+        # Bytes
+        self.padding = 0
 
         if config._64BIT:
             self.dtype = 'uint64'
@@ -45,7 +47,8 @@ class Source(list):
     def pad(self):
         """
         Pads the block to have k symbols of each symbolsize bytes.
-        Each symbol will be interepreted as an array of unsigned integers        """
+        Each symbol will be interepreted as an array of unsigned integers
+        """
 
         # loop through checking each symbol
         for i in xrange(len(self)):

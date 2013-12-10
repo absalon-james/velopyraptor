@@ -13,6 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
+
 class Schedule(object):
     """
     Class is used to keep track of operations on a matrix that can
@@ -25,7 +27,8 @@ class Schedule(object):
 
         Arguments:
         l -- Integer combined h + s + k(number of source symbols)
-        m -- Integer combined h + s + n(number of encoding symbols.  n should be >= k)
+        m -- Integer combined h + s + n(number of encoding symbols.
+             n should be >= k)
         """
         # Let c[0] = 0, c[1] = 1,...,c[L-1] = L-1
         self.c = range(l)

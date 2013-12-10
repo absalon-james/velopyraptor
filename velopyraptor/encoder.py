@@ -16,6 +16,7 @@ limitations under the License.
 import matrix
 from raptor import RaptorR10
 
+
 class Encoder(RaptorR10):
     """
     Encoder for producing encoded symbols
@@ -33,6 +34,7 @@ class Encoder(RaptorR10):
         super(Encoder, self).__init__(k, **kwargs)
         self.symbols = symbols
         self.calculate_i_symbols()
+
 
 class EncoderHard(RaptorR10):
     """
@@ -66,4 +68,4 @@ class EncoderHard(RaptorR10):
         a = self.a()
         ai = matrix.inverse(a)
         d = self.calculate_d()
-        return matrix.multiply(ai, d)        
+        return matrix.multiply(ai, d)

@@ -15,7 +15,7 @@ limitations under the License.
 """
 
 # Implemented based on http://tools.ietf.org/html/rfc5053#section-5.4.4.4
-# Maps a range of numbers to degrees (not temperature. actually, not sure 
+# Maps a range of numbers to degrees (not temperature. actually, not sure
 # what it means
 
 V_MIN = 0
@@ -24,6 +24,7 @@ F = [0, 10241, 491582, 712794, 831695, 948446, 1032189, 1048576]
 D = [None, 1, 2, 3, 4, 10, 11, 40]
 between_range = lambda start, end, v: start <= v < end
 
+
 def R10(v):
     """
     Returns the R10 degree for v
@@ -31,7 +32,9 @@ def R10(v):
     """
 
     if not between_range(V_MIN, V_MAX, v):
-        raise Exception("Recieved v %s.  v must be between %s and %s" % (v, V_MIN, V_MAX))
+        raise Exception(
+            "Recieved v %s.  v must be between %s and %s" % (v, V_MIN, V_MAX)
+        )
 
     for i in range(1, len(F)):
         if between_range(F[i-1], F[i], v):

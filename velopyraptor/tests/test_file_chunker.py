@@ -6,12 +6,12 @@ import unittest
 # Parent holds the encoding/decoding python files
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import config
 from chunker import FileChunker
 
 DEFAULT_FILE = 'latin_text'
 DEFAULT_K = 4
 DEFAULT_SYMBOLSIZE = 1024 * 1024
+
 
 class TestFileChunker(unittest.TestCase):
 
@@ -22,15 +22,18 @@ class TestFileChunker(unittest.TestCase):
         """
         with self.assertRaises(Exception):
             filename = 'somebadfiledfsgdsgsdfg.txt'
-            with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, filename) as chunker:
-                pass            
+            with FileChunker(DEFAULT_K,
+                             DEFAULT_SYMBOLSIZE, filename):
+                pass
 
     def test_good_file(self):
         """
         Asserts that a good file can be opened
         """
         try:
-            with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
+            with FileChunker(DEFAULT_K,
+                             DEFAULT_SYMBOLSIZE,
+                             DEFAULT_FILE):
                 pass
         except Exception:
             self.fail("Unable to open %s for chunking" % (DEFAULT_FILE))
@@ -45,7 +48,8 @@ class TestFileChunker(unittest.TestCase):
         total_blocks = int(math.ceil(filesize / (blocksize * 1.0)))
         padding_size = blocksize - (filesize % blocksize)
 
-        with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
+        with FileChunker(DEFAULT_K,
+                         DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
 
             for i in xrange(total_blocks):
                 chunk = chunker.chunk()
@@ -71,10 +75,13 @@ class TestFileChunker(unittest.TestCase):
         chunk has the same number of symbols and that each symbol
         is of length symbolsize
         """
-        with FileChunker(DEFAULT_K, DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
+        with FileChunker(DEFAULT_K,
+                         DEFAULT_SYMBOLSIZE, DEFAULT_FILE) as chunker:
             chunk = chunker.chunk()
-            symbol_length_in_uint64s = DEFAULT_SYMBOLSIZE / 8 # uint64 for 64 bit systems
-            #symbol_length_in_uint32s = DEFAULT_SYMBOLSIZE / 4 # uint32 for 32 bit systems
+            # uint64 for 64 bit systems
+            symbol_length_in_uint64s = DEFAULT_SYMBOLSIZE / 8
+            # uint32 for 32 bit systems
+            #symbol_length_in_uint32s = DEFAULT_SYMBOLSIZE / 4
             while(chunk):
                 self.assertTrue(len(chunk) == DEFAULT_K)
 

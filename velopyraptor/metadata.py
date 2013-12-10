@@ -1,11 +1,11 @@
 from hashlib import md5
-from ctypes import Structure, c_uint16, c_uint32, c_byte, c_char
+from ctypes import Structure, c_uint16, c_uint32, c_char
 
-import cStringIO
 import ctypes
 
 # Compute the digest size
 DIGEST_SIZE = md5().digest_size
+
 
 class Metadata(Structure):
     """
@@ -22,7 +22,7 @@ class Metadata(Structure):
     def __str__(self):
         """
         Override the default __str__ method with this one.
-        
+
         Returns a string
         """
         return str(buffer(self))
@@ -50,4 +50,4 @@ class Metadata(Structure):
 
         # Move
         ctypes.memmove(ctypes.addressof(meta), meta_string, meta_length)
-        return (meta, string)        
+        return (meta, string)
