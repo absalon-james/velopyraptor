@@ -393,6 +393,9 @@ class RaptorR10(object):
 
         Returns a decoding schedule for a
         """
+        # Reset coding stats
+        self.stats = {"xors": 0, "row_swaps": 0, "column_swaps": 0}
+
         m = self.s + self.h + len(self.symbols)
         schedule = Schedule(self.l, (self.s + self.h + len(self.symbols)))
 
@@ -586,12 +589,11 @@ class RaptorR10(object):
             a = self.a()
             self.decoding_schedule(a)
             return True
-        except:
+        except Exception:
             pass
         return False
 
-    @classmethod
-    def prepass(cls, a, schedule):
+    def prepass(self, a, schedule):
 
         """
         Taking a stab at doing some preliminary xoring before
@@ -617,10 +619,9 @@ class RaptorR10(object):
 
                 # Check requirements prior to proceeding with XOR
                 if new_row.count() + 2 < count:
-                    cls.xor_row(a, j, i, schedule)
+                    self.xor_row(a, j, i, schedule)
 
-    @classmethod
-    def xor_row(cls, a, r1, r2, schedule):
+    def xor_row(self, a, r1, r2, schedule):
 
         """
         XORS r2 into r1 and records the operation
@@ -638,8 +639,9 @@ class RaptorR10(object):
         # Schedule the xor
         schedule.xor(r1, r2)
 
-    @classmethod
-    def exchange_column(cls, a, c1, c2, schedule):
+        self.stats['xors'] += 1
+
+    def exchange_column(self, a, c1, c2, schedule):
         """
         Exchanges column c1 of a with column c2 of a and records the operation
         in the schedule
@@ -659,8 +661,9 @@ class RaptorR10(object):
         # Record the operation
         schedule.exchange_column(c1, c2)
 
-    @classmethod
-    def exchange_row(cls, a, o_degrees, r1, r2, schedule):
+        self.stats['column_swaps'] += 1
+
+    def exchange_row(self, a, o_degrees, r1, r2, schedule):
         """
         Exchanges row r1 of a with row r2 of a and records the operation
         in the schedule
@@ -683,6 +686,8 @@ class RaptorR10(object):
 
         # Record the operation
         schedule.exchange_row(r1, r2)
+
+        self.stats['row_swaps'] += 1
 
     @classmethod
     def ldpc(cls, k, s):
